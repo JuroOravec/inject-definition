@@ -1,0 +1,40 @@
+{
+  "name": "inject-definition",
+  "version": "1.0.0",
+  "description": "Inject user-defined definitions, macros, constants or other snippets to a text if corresponding keywords are present.",
+  "author": "Juro Oravec",
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "build": "tsc",
+  "keywords": [
+    "inject",
+    "insert",
+    "definition",
+    "macro",
+    "snippet",
+    "text"
+  ],
+  "browserslist": "> 0.25%, not dead",
+  "scripts": {
+    "build": "tsc && ./node_modules/.bin/babel temp --out-dir lib && rsync -a -m --include '*/' --include '*.d.ts' --exclude '*' temp/ lib/ && rm -r temp ",
+    "start": "yarn run build && node lib",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.0",
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-typescript": "^7.1.0",
+    "babel-preset-minify": "^0.5.0",
+    "eslint": "^5.0.1",
+    "ts-node": "^6.1.1",
+    "typescript": "^2.9.2"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.0.0",
+    "deepcopy": "^1.0.0",
+    "jest": "^23.6.0",
+    "obj-stringify": "^1.0.0",
+    "yarn": "^1.9.4"
+  }
+}
