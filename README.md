@@ -282,7 +282,7 @@ yarn run test
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/JuroOravec/inject-definition/blob/master/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Change-log
 
@@ -292,7 +292,7 @@ Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c6
 
 - [**Juro Oravec**](https://github.com/https://github.com/JuroOravec)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/JuroOravec/inject-definition/graphs/contributors) who participated in this project.
 
 ## License
 
