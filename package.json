@@ -4,6 +4,9 @@
   "description": "Inject user-defined definitions, macros, constants or other snippets to a text if corresponding keywords are present.",
   "author": "Juro Oravec",
   "license": "MIT",
+  "repository": "github:JuroOravec/inject-definition",
+  "homepage": "https://github.com/JuroOravec/inject-definition",
+  "url": "https://github.com/JuroOravec/inject-definition/issues",
   "main": "./lib/index.js",
   "build": "tsc",
   "keywords": [

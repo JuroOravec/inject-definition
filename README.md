@@ -1,6 +1,6 @@
 # inject-definition
 
-Inject user-defined definitions, macros, constants or other snippets to a text simply if corresponding keywords are present.
+NPM package for injecting user-defined definitions, macros, constants or other snippets to a text simply if corresponding keywords are present.
 
 ## Getting Started
 
@@ -22,8 +22,8 @@ yarn add inject-definition -S
 
 Import and initialize with `.init()`
 
-```
-const injectDefinition = require('inject-definition');
+```javascript
+const injectDefinition = require("inject-definition");
 const mathDefinitions = injectDefinition.init();
 ```
 
@@ -44,32 +44,42 @@ See **API > Properties** for the descriptions of individual properties.
 
 #### Add new definitions.
 
-```
-mathDefinitions.define('multiply.double', function double(x){ return 2 * x; });
-mathDefinitions.define('multiply.triple', function triple(x){ return 3 * x; }, {activate: false});
-mathDefinitions.define('constants.number.e', 'const e = 2.71828;');
-mathDefinitions.define('constants.number.pi', 'const pi = 3.1415;');
+```javascript
+mathDefinitions.define("multiply.double", function double(x) {
+  return 2 * x;
+});
+mathDefinitions.define(
+  "multiply.triple",
+  function triple(x) {
+    return 3 * x;
+  },
+  { activate: false }
+);
+mathDefinitions.define("constants.number.e", "const e = 2.71828;");
+mathDefinitions.define("constants.number.pi", "const pi = 3.1415;");
 ```
 
 #### Remove a single or a group of existing definitions.
 
-```
-mathDefinitions.undefine('constants.number');
-mathDefinitions.has('constants.number.pi'); // false
-mathDefinitions.has('constants.number.e'); // false
+```javascript
+mathDefinitions.undefine("constants.number");
+mathDefinitions.has("constants.number.pi"); // false
+mathDefinitions.has("constants.number.e"); // false
 ```
 
 #### Inject definitions into a text that might include defined keywords.
 
-```
-mathDefinitions.define('multiply.double', function double(x){ return 2 * x; });
-mathDefinitions.define('constants.number.pi', 'const pi = 3.1415;');
-mathDefinitions.has('constants.number.pi'); // true
+```javascript
+mathDefinitions.define("multiply.double", function double(x) {
+  return 2 * x;
+});
+mathDefinitions.define("constants.number.pi", "const pi = 3.1415;");
+mathDefinitions.has("constants.number.pi"); // true
 
-const snippet = 'const x = multiply.double(32 + constants.number.pi);';
+const snippet = "const x = multiply.double(32 + constants.number.pi);";
 
 // `inject` injects the definitions into a string
-mathDefinitions.inject(snippet, {includeDefinitionsObjects: true});
+mathDefinitions.inject(snippet, { includeDefinitionsObjects: true });
 
 // function _double0(x) {    // injected function
 // return 2 * x;
@@ -84,14 +94,20 @@ mathDefinitions.inject(snippet, {includeDefinitionsObjects: true});
 
 Deactivated definitions will be ignored when processing a text with definitions.
 
-```
-mathDefinitions.define('multiply.double', function double(x){ return 2 * x; }, {activate: false});
-mathDefinitions.define('constants.number.pi', 'const pi = 3.1415;');
+```javascript
+mathDefinitions.define(
+  "multiply.double",
+  function double(x) {
+    return 2 * x;
+  },
+  { activate: false }
+);
+mathDefinitions.define("constants.number.pi", "const pi = 3.1415;");
 
-mathDefinitions.deactivate('constants.number');
-mathDefinitions.activate('multiply.double');
+mathDefinitions.deactivate("constants.number");
+mathDefinitions.activate("multiply.double");
 
-const snippet = 'const x = multiply.double(32 + constants.number.pi);';
+const snippet = "const x = multiply.double(32 + constants.number.pi);";
 
 // `scan` returns a list of found definitions.
 mathDefinitions.scan(snippet); // ['multiply.double']
@@ -99,12 +115,12 @@ mathDefinitions.scan(snippet); // ['multiply.double']
 
 #### Check for existence or get a definition's value
 
-```
-mathDefinitions.define('constants.number.e', 'const e = 2.71828;');
-mathDefinitions.define('constants.number.pi', 'const pi = 3.1415;');
+```javascript
+mathDefinitions.define("constants.number.e", "const e = 2.71828;");
+mathDefinitions.define("constants.number.pi", "const pi = 3.1415;");
 
-mathDefinitions.get('constants.number.e'); // 'const e = 2.71828;'
-mathDefinitions.has('constants.number.pi'); // true
+mathDefinitions.get("constants.number.e"); // 'const e = 2.71828;'
+mathDefinitions.has("constants.number.pi"); // true
 ```
 
 ## API
