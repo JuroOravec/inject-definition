@@ -2,11 +2,7 @@
 
 NPM package for injecting user-defined definitions, macros, constants or other snippets to a text simply if corresponding keywords are present.
 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
-### Installing
+## Installing
 
 Install via npm
 
@@ -27,7 +23,7 @@ const injectDefinition = require("inject-definition");
 const mathDefinitions = injectDefinition.init();
 ```
 
-#### Initialisation options
+### Initialisation options
 
 `init([options])` accepts an object of options with the following properties:
 
@@ -125,17 +121,17 @@ mathDefinitions.has("constants.number.pi"); // true
 
 ## API
 
-### Properties
+### **Properties**
 
-#### DefinitionInjector.definitions
+### definitions
 
 An object of definitions stored as a tree of nested definition objects, where leafs are definition values.
 
-#### DefinitionInjector.activeDefinitions
+### activeDefinitions
 
 An object of definitions stored as a tree of nested definition objects. A subset of `definitions`. Only definitions that have existing path in `activeDefinitions` will be recognised when scanning / generating / injecting text.
 
-#### DefinitionInjector.declarationFormatter
+### declarationFormatter
 
 A function that defines how definitions objects should be formatted when `inject` has option `includeDefinitionsObjects: true`.
 
@@ -143,13 +139,13 @@ E.g. if given a definition object `'foo'`, which has structure `{'bar': 42}`, th
 
 `declarationFormatter` accepts a function of type `(definitionsObjectName: string, definitionsObject: object) => string`
 
-#### DefinitionInjector.minifier
+### minifier
 
 A function that minifies a string that had definitions injected. There is no default minification.
 
 `minifier` accepts a function of type `(textWithInjectedDefinitions: string) => string`
 
-#### DefinitionInjector.variableNameRetriever
+### variableNameRetriever
 
 A function that returns the name of a variable (if there is one) that is being defined in a definition.
 
@@ -157,7 +153,7 @@ Used for avoiding clashes when multiple definitions declare functions or variabl
 
 `variableNameRetriever` accepts a function of type `(definition: string) => string`
 
-#### DefinitionInjector.variableNameReplacer
+### variableNameReplacer
 
 A function that replaces a variable name (same as the one found with `variableNameRetriever`) with a new name.
 
@@ -165,9 +161,9 @@ Used for avoiding clashes when multiple definitions declare functions or variabl
 
 `variableNameReplacer` accepts a function of type `(definition: string, oldVariableName: string, newVariableName: string) => string`
 
-### Methods
+### **Methods**
 
-#### DefinitionInjector.define(_path, definition[, options]_)
+### define(_path, definition[, options]_)
 
 Creates a definition by adding it to the `definitions` object and optionally also to `activeDefinitions`.
 
@@ -178,25 +174,25 @@ Creates a definition by adding it to the `definitions` object and optionally als
 - **`activate:`**`boolean` - Whether the definition should be automatically activated. Non-active definitions will be ignored when scanning / generating / injecting text.
   Default: `true`
 
-#### DefinitionInjector.undefine(_path_)
+### undefine(_path_)
 
 Removes a definition by removing it from both the `definitions` and `activeDefinitions` objects.
 
 **`path:`**`string | string[]` - A string or array of strings specifying the path to a definition. If as string, path components are separated by dot `'.'` .
 
-#### DefinitionInjector.activate(_path_)
+### activate(_path_)
 
 Activates a definition by adding it to the `activeDefinitions` object. Does nothing if the definition does not exist in the `definitions` object.
 
 **`path:`**`string | string[]` - A string or array of strings specifying the path to a definition. If as string, path components are separated by dot `'.'` .
 
-#### DefinitionInjector.deactivate(_path_)
+### deactivate(_path_)
 
 Deactivates a definition by removing it from the `activeDefinitions` object. Does nothing if the definition does not exist in the `definitions` object.
 
 **`path:`**`string | string[]` - A string or array of strings specifying the path to a definition. If as string, path components are separated by dot `'.'` .
 
-#### DefinitionInjector.get(_path[, options]_)
+### get(_path[, options]_)
 
 Retrieves value of a definition specified by path. Returns undefined if no definition can be found.
 
@@ -207,7 +203,7 @@ Retrieves value of a definition specified by path. Returns undefined if no defin
 - **`definitionsObject:`**`string` - Type of definitions object that will be searched through. Available values are `'all'`, `'active'`.
   Default: `'all'`
 
-#### DefinitionInjector.has(_path[, options]_)
+### has(_path[, options]_)
 
 Checks if a definition specified by a path exists, and returns `true` if so. Returns `false` otherwise.
 
@@ -218,7 +214,7 @@ Checks if a definition specified by a path exists, and returns `true` if so. Ret
 - **`definitionsObject:`**`string` - Type of definitions object that will be searched through. Available values are `'all'`, `'active'`.
   Default: `'all'`
 
-#### DefinitionInjector.scan(_targetText[, options]_)
+### scan(_targetText[, options]_)
 
 Returns the keywords (names) of definitions that were found in `targetText`. Only active definitions are included.
 
@@ -234,7 +230,7 @@ Optionally sets the active definitions to all the definitions that were found in
 - **`overwriteActiveDefinitions:`**`boolean` - Whether the active definitions should be overwritten with the definitions found in `targetText`.
   Default: `false`
 
-#### DefinitionInjector.generate(_targetText[, options]_)
+### generate(_targetText[, options]_)
 
 Returns the values of definitions that were found in `targetText`. Only active definitions are included.
 
@@ -253,7 +249,7 @@ Optionally sets the active definitions to all the definitions that were found in
 - **`overwriteActiveDefinitions:`**`boolean` - Whether the active definitions should be overwritten with the definitions found in `targetText`.
   Default: `false`
 
-#### DefinitionInjector.inject(_targetText[, options]_)
+### inject(_targetText[, options]_)
 
 Returns `targetText` with definitions injected. Only active definitions are included.
 
