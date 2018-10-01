@@ -1,6 +1,6 @@
 # inject-definition
 
-[![Build Status](https://travis-ci.org/JuroOravec/inject-definition.svg?branch=master)](https://travis-ci.org/JuroOravec/inject-definition)
+[![Build Status](https://travis-ci.org/JuroOravec/inject-definition.svg?branch=master)](https://travis-ci.org/JuroOravec/inject-definition) [![Coverage Status](https://coveralls.io/repos/github/JuroOravec/inject-definition/badge.svg?branch=master)](https://coveralls.io/github/JuroOravec/inject-definition?branch=master)
 
 NPM package for injecting user-defined definitions, macros, constants or other snippets to a text simply if corresponding keywords are present.
 
