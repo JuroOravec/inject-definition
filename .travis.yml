@@ -1,0 +1,9 @@
+language: node_js
+deploy:
+  provider: npm
+  email: juraj.oravec.josefson@gmail.com
+  api_key:
+    secure: DZrYcTjSKqnEGUbSQg0TpC9XJzCExEmetMf2MVABe/NzMbl1xKdporTb8TgqTTht/O2+M/RGalwGY5RsnmTD9VyJbQdm1Mg+/9QbvHsH3MTjpQJN+J3IsrgGjp6BzcPZLa2/Jxb6vqUYM3+3ltGBILjQqG7Ogd0d7gZJXwW8+tBHb2sdu1CPQYlv3HA1MqwaKohuZeVHDqdxfsNf3R8316ap1yoo1xyCiPGQutcYyxrWXGoZrHeQMnj0MSXuAt0DCdQdEbIGtQJ7cMXHR4Jxsldzni3tOKwE2S5hBSm843ZRKZhsCD2S22GiPbuGAcokDOpfUl9Htwf71qFCuo4SN9NbZOVB6DL3Kszs6W2MhiW50N65yDHXdp499qYudtmhA03hhASvXNrJBz6IcjmbFT0wBJjTrVxgeW6jxNvT9gn44rJwEMaLoy/G9TwfmrSPy2nPbhB1ln6t3l65K14hR3ekIBmoKOB8UGmDV4395j3TZe6Cw3ok9mBPCHbCLyq+VJFCi/VLjzQKAeWlEmZrP3uxPP4/3rIrfEIjIIFA3djXuzGn9MOrKYMPxq4FgmXSgUjaNMjVJKdV4vpABDs5h60x+AZOMQX1qa/D20gRv8+9tLTVvxlznFAHfVp7vzOtRUek40C2IXpUk+XpguTJbcT+PgJMh+Q17QloHNsicYY=
+  on:
+    tags: true
+    repo: JuroOravec/inject-definition
