@@ -1,5 +1,7 @@
 # inject-definition
 
+[![Build Status](https://travis-ci.org/JuroOravec/inject-definition.svg?branch=master)](https://travis-ci.org/JuroOravec/inject-definition)
+
 NPM package for injecting user-defined definitions, macros, constants or other snippets to a text simply if corresponding keywords are present.
 
 ## Installing
