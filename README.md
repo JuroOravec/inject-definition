@@ -27,7 +27,7 @@ const mathDefinitions = injectDefinition.init();
 
 ### Initialisation options
 
-`init([options])` accepts an object of options with the following properties:
+`init()` accepts an object of options with the following properties:
 
 - **`activeDefinitions:`**`object`
 - **`definitions:`**`object`
@@ -39,6 +39,17 @@ const mathDefinitions = injectDefinition.init();
 See **API > Properties** for the descriptions of individual properties.
 
 ## Examples
+
+To inject definitions into a text, you need to:
+
+1. Create (define) new definitions with `define()`.
+2. Activate or deactivate those definitions that should/should not be used with `activate()` and `deactivate()`
+3. Inject the definitions into the text with `inject()`.
+
+To get a list of definition names found in text, use `scan()`.
+To get a list of definition values found in text, use `generate()`.
+
+inject-definition can be also used for injecting snippets that are formatted for other languages than JS. Consider definiting your own `variableNameReplacer`, `variableNameRetriever`, `declarationFormatter` methods if this is the goal.
 
 #### Add new definitions.
 
