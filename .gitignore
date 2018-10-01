@@ -46,8 +46,6 @@ src/.DS_Store
 node_modules
 .vscode
 .prettierignore
-yarn.lock
-.npmignore
 
 
 ### Project ###
@@ -184,7 +182,7 @@ typings/
 # yarn.lock
 
 # package.json Lock file
-package-lock.json
+# package-lock.json
 
 # dotenv environment variables file
 .env
@@ -240,5 +238,4 @@ tags
 # Visual Studio Code - https://code.visualstudio.com/
 .settings/
 .vscode/
-tsconfig.json
 jsconfig.json
