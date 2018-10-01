@@ -21,7 +21,7 @@
   "scripts": {
     "build": "tsc && ./node_modules/.bin/babel temp --out-dir lib && rsync -a -m --include '*/' --include '*.d.ts' --exclude '*' temp/ lib/ && rm -r temp ",
     "start": "yarn run build && node lib",
-    "test": "jest"
+    "test": "jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.0",
@@ -29,6 +29,7 @@
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-typescript": "^7.1.0",
     "babel-preset-minify": "^0.5.0",
+    "coveralls": "^3.0.2",
     "eslint": "^5.0.1",
     "ts-node": "^6.1.1",
     "typescript": "^2.9.2"
