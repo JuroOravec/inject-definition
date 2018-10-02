@@ -233,9 +233,9 @@ export class DefinitionInjector extends DefinitionManager
    *   - `insertLocation` - A string specifying the location where the
    * definitions should be inserted. Available values: `'start'`, `'end'`,
    * `'replace'`. Default: `'start'`
-   *   - `minify` - Whether the resulting string should be minified according
-   * to the user-defined minifier function. Has effect only when `delimeter` is
-   * a string. Default: `false`
+   *   - `minify` - Whether the injected definitions should be minified according
+   * to the user-defined minifier function. has no effect if 'insertLocation'
+   * is 'replace'. Default: `false`
    *   - `overwriteActiveDefinitions` - Whether the active definitions should
    * be overwritten with the definitions found in the string. Default: `false`
    *   - `separator` - A string that joins definitions and original text into a
@@ -323,10 +323,14 @@ export class DefinitionInjector extends DefinitionManager
         ] as string)
       );
 
-      textToJoin.push(
-        stringifiedDefinitions.join(delimeter),
-        ...formattedBranches
+      const joinedStringifiedDefinitions = stringifiedDefinitions.join(
+        delimeter
       );
+      const finalDefinitions = minify
+        ? this[minifierSym](joinedStringifiedDefinitions)
+        : joinedStringifiedDefinitions;
+
+      textToJoin.push(finalDefinitions, ...formattedBranches);
     } else {
       // If the definitions object is not necessary (E.g. in case of textual
       // definitions, instead of a programmatic ones) the definitions are
@@ -335,7 +339,14 @@ export class DefinitionInjector extends DefinitionManager
         ...keywords.map(keyword => stringify(this.get(keyword)))
       );
 
-      textToJoin.push(stringifiedDefinitions.join(delimeter));
+      const joinedStringifiedDefinitions = stringifiedDefinitions.join(
+        delimeter
+      );
+      const finalDefinitions = minify
+        ? this[minifierSym](joinedStringifiedDefinitions)
+        : joinedStringifiedDefinitions;
+
+      textToJoin.push(finalDefinitions);
     }
 
     // Join the definitions with the text with a specified separator inbetween
@@ -362,10 +373,7 @@ export class DefinitionInjector extends DefinitionManager
 
     // Join the definitions (optionally definitions object) and target text into single string
     const joinedText = textToJoin.join(separator || "");
-
-    if (minify) {
-      return this[minifierSym](joinedText);
-    } else return joinedText;
+    return joinedText;
   }
 
   /**

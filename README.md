@@ -282,7 +282,7 @@ Optionally sets the active definitions to all the definitions that were found in
 - **`insertLocation:`**`string` - A string specifying the location where the definitions should be inserted. Available values: `'start'`, `'end'`, `'replace'`.
   Default: `'start'`
 
-- **`minify:`**`boolean` - Whether the resulting string should be minified according to the `minifier` function.
+- **`minify:`**`boolean` - Whether the injected definitions should be minified according to the `minifier` function.
   Default: `false`
 
 - **`overwriteActiveDefinitions:`**`boolean` - Whether the active definitions should be overwritten with the definitions found in `targetText`.
