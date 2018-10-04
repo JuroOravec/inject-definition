@@ -173,14 +173,14 @@ export class DefinitionInjector extends DefinitionManager
       {
         name: "variableNameRetriever",
         prop: variableNameRetrieverSym,
-        value: variableNameReplacer
+        value: variableNameRetriever
       },
       // Define the method that replaces a variable name of the first defined variable
       // in a definition from an old value to a new value.
       {
         name: "variableNameReplacer",
         prop: variableNameReplacerSym,
-        value: variableNameRetriever
+        value: variableNameReplacer
       }
     ];
 
