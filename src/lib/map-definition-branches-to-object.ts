@@ -26,7 +26,8 @@ export function mapDefinitionBranchesToObject(
     value: string;
   }[],
   openingTag: string,
-  closingTag: string
+  closingTag: string,
+  quoteMark: string = "'"
 ) {
   const stringifiedDefinitionsObject = {} as IDefinition;
 
@@ -49,7 +50,10 @@ export function mapDefinitionBranchesToObject(
 
   // Separately stringify each of the branches, and remove the enclosing
   // tags, so only the reference without quotes remains.
-  const tagsRegExp = new RegExp("'" + openingTag + "|" + closingTag + "'", "g");
+  const tagsRegExp = new RegExp(
+    quoteMark + "?" + openingTag + "|" + closingTag + quoteMark + "?",
+    "g"
+  );
   Object.keys(definitionManager.definitions).forEach(branchKey => {
     const branch = definitionManager.definitions[branchKey];
     const branchAsString = stringify(branch);
