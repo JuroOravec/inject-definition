@@ -1,6 +1,6 @@
 {
   "name": "inject-definition",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Inject user-defined definitions, macros, constants or other snippets to a text if corresponding keywords are present.",
   "author": "Juro Oravec",
   "license": "MIT",
@@ -19,6 +19,7 @@
   ],
   "browserslist": "> 0.25%, not dead",
   "scripts": {
+    "tsc": "tsc",
     "build": "tsc && ./node_modules/.bin/babel temp --out-dir lib && rsync -a -m --include '*/' --include '*.d.ts' --exclude '*' temp/ lib/ && rm -r temp ",
     "start": "yarn run build && node lib",
     "test": "jest --coverage --coverageReporters=text-lcov | coveralls"
