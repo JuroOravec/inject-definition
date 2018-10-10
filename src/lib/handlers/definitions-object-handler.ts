@@ -1,4 +1,4 @@
-/// <reference path="../interface/definition-manager.ts" />
+/// <reference path="../../interface/definition-manager.ts" />
 
 import IDefinition = DefinitionInjector.IDefinition;
 import IDefinitionManager = DefinitionInjector.IDefinitionManager;
@@ -19,17 +19,36 @@ import IDefinitionManager = DefinitionInjector.IDefinitionManager;
  * @param definitionsObject A string or a definitions object. If string, the
  * definitionManager is searched for the definitions object with that label.
  */
-export function definitionsObjectWrapper<R>(
+export function definitionsObjectHandler<R>(
   callback: (definitionsObject: IDefinition, ...args: any[]) => R,
   definitionManager: IDefinitionManager,
-  definitionsObject: string | IDefinition,
+  definitionsObject: IDefinition | string,
   ...args: any[]
 ) {
   if (!definitionManager) throwMissingDefManagerError();
 
   const availableCommands = [
-    { key: "all", value: definitionManager.definitions },
-    { key: "active", value: definitionManager.activeDefinitions }
+    {
+      key: "all",
+      value: definitionManager.getAll({
+        select: "all",
+        type: "full"
+      }) as IDefinition
+    },
+    {
+      key: "active",
+      value: definitionManager.getAll({
+        select: "active",
+        type: "full"
+      }) as IDefinition
+    },
+    {
+      key: "inactive",
+      value: definitionManager.getAll({
+        select: "inactive",
+        type: "full"
+      }) as IDefinition
+    }
   ];
 
   if (typeof definitionsObject === "object") {
@@ -48,13 +67,15 @@ export function definitionsObjectWrapper<R>(
 
   function throwUnknownObjectError() {
     throw TypeError(
-      `Unknown definitions object "${definitionsObject}". Available options are: "${availableCommands
-        .map(cmd => cmd.key)
-        .join(", ")}" `
+      `Unknown definitions object "${definitionsObject}".` +
+        ` Available options are: ` +
+        `"${availableCommands.map(cmd => cmd.key).join(", ")}" `
     );
   }
 
   function throwMissingDefManagerError() {
-    throw ReferenceError(`Invalid reference to the Definition Manager.`);
+    throw ReferenceError(
+      `Invalid reference to the Definition Manager, got ${definitionManager} instead.`
+    );
   }
 }

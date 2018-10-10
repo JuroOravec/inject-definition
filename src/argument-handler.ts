@@ -1,28 +1,35 @@
 /// <reference path="./interface/definition-manager.ts" />
 
-import ArgumentHandler = DefinitionInjector.ArgumentHandler;
-import ArgumentHandlerOptions = DefinitionInjector.ArgumentHandlerOptions;
+import IArgumentHandler = DefinitionInjector.IArgumentHandler;
+import IArgumentHandlerOptions = DefinitionInjector.IArgumentHandlerOptions;
 import IDefinition = DefinitionInjector.IDefinition;
 
-import { pathWrapper } from "./lib/path-wrapper";
-import { optionsWrapper } from "./lib/options-wrapper";
-import { definitionWrapper } from "./lib/definition-wrapper";
-import { definitionsObjectWrapper } from "./lib/definitions-object-wrapper";
+import { pathHandler } from "./lib/handlers/path-handler";
+import { optionsHandler } from "./lib/handlers/options-handler";
+import { definitionHandler } from "./lib/handlers/definition-handler";
+import { definitionsObjectHandler } from "./lib/handlers/definitions-object-handler";
 import { copyObject } from "./lib/copy-object";
+import { createDefinition } from "./lib/create-definition";
 
 type Filter<T, U> = T extends U ? T : never;
 type LocalArgumentHandlerOptions<T1, T2, T3, T4> = Partial<{
-  args: ArgumentHandlerOptions["args"];
-  definition: ArgumentHandlerOptions["definition"];
-  definitionManager: ArgumentHandlerOptions["definitionManager"];
-  definitions: ArgumentHandlerOptions["definitions"];
+  args: IArgumentHandlerOptions["args"];
+  definition: IArgumentHandlerOptions["definition"];
+  definitionManager: IArgumentHandlerOptions["definitionManager"];
+  definitions: IArgumentHandlerOptions["definitions"];
   definitionsObject: T4;
   defaults: T2;
-  lastPathComponent: ArgumentHandlerOptions["lastPathComponent"];
+  lastPathComponent: IArgumentHandlerOptions["lastPathComponent"];
   options: T3;
   path: T1;
 }>;
-type FilteredPath<T> = Filter<ArgumentHandlerOptions["path"], T>;
+type FilteredPath<T> = Filter<IArgumentHandlerOptions["path"], T>;
+
+type HandlerFunction<T, T1, T2, T3, T4> = (
+  options: LocalArgumentHandlerOptions<T1, T2, T3, T4>,
+  ...args: any[]
+) => T;
+type HandlerOptions<T, T1, T2, T3, T4> = T | HandlerFunction<T, T1, T2, T3, T4>;
 
 /**
  * Private class that handles processing of arguments passed to
@@ -36,21 +43,26 @@ type FilteredPath<T> = Filter<ArgumentHandlerOptions["path"], T>;
  * @method `path` Transforms a path from a string with dots '.' to an array of
  * strings.
  *
- * @method `finally` Calls a callback with stored arguments.
+ * @method `tap` Calls a callback with stored arguments. Results are ignored.
+ *
+ * @method `new` Calls a callback with stored arguments and creates new instance
+ * with the result.
+ *
+ * @method `finally` Calls a callback with stored arguments and returns the result.
  */
 export class DefinitionManagerArgumentHandler<
-  Path extends ArgumentHandlerOptions["path"],
-  Defaults extends ArgumentHandlerOptions["defaults"],
-  Options extends ArgumentHandlerOptions["options"],
-  DefObject extends ArgumentHandlerOptions["definitionsObject"]
-> implements ArgumentHandler {
-  private _args: ArgumentHandlerOptions["args"] = [];
-  private _definition: ArgumentHandlerOptions["definition"];
-  private _definitionManager: ArgumentHandlerOptions["definitionManager"];
-  private _definitions: ArgumentHandlerOptions["definitions"] = [];
+  Path extends IArgumentHandlerOptions["path"],
+  Defaults extends IArgumentHandlerOptions["defaults"],
+  Options extends IArgumentHandlerOptions["options"],
+  DefObject extends IArgumentHandlerOptions["definitionsObject"]
+> implements IArgumentHandler {
+  private _args: IArgumentHandlerOptions["args"] = [];
+  private _definition: IArgumentHandlerOptions["definition"];
+  private _definitionManager: IArgumentHandlerOptions["definitionManager"];
+  private _definitions: IArgumentHandlerOptions["definitions"] = [];
   private _definitionsObject: DefObject = {} as DefObject;
   private _defaults: Defaults = {} as Defaults;
-  private _lastPathComponent: ArgumentHandlerOptions["lastPathComponent"] = "";
+  private _lastPathComponent: IArgumentHandlerOptions["lastPathComponent"] = "";
   private _options: Options = {} as Options;
   private _path: FilteredPath<Path>;
 
@@ -61,7 +73,8 @@ export class DefinitionManagerArgumentHandler<
     this._definition = options.definition || "";
     this._definitionManager = options.definitionManager;
     this._definitions = options.definitions || [];
-    this._definitionsObject = (options.definitionsObject || {}) as DefObject;
+    this._definitionsObject =
+      options.definitionsObject || (createDefinition() as DefObject);
     this._defaults = (options.defaults || {}) as Defaults;
     this._options = (options.options || {}) as Options;
     this._path = (options.path || []) as FilteredPath<Path>;
@@ -82,19 +95,40 @@ export class DefinitionManagerArgumentHandler<
    * @param newPropertyValues An object of values that overwrite the values
    * stored in the argument handler.
    *
-   * @param wrapperOptions An object of options that can modify the behaviour
-   * of the underlying definition processor. Options are:
-   *   - `abortOnFail` - Whether the wrapper should not proceed if definition
+   * @param handlerOptions An object (or a function that returns an object) of
+   * options that can modify the behaviour of the underlying definition
+   * processor. Options are:
+   *   - `abortOnFail` - Whether the handler should not proceed if definition
    * is not found or it is null. Default: `true`
+   *   - `action` - boolean or null, whether the newly created object and the path
+   * to it (if 'create': true) should be explicitly actived, inactived, or left
+   * as is, in which case the newly created object is actiaved, but path is not
+   * altered.
+   * Default: `null`
+   *   - `activeStatus` - boolean or null, whether only active (true), inactive
+   * (false), or all (null) definitions should be considered when getting a
+   * definition. Default: `null`
    *   - `create` - boolean, whether the object specified by path should be created
    * if it doesn't exist yet. Default: `true`
    *   - `depthOffset` - Specify offset from the path's depth, at which the
    * definition object should be retrieved or created. Default: `0`
    */
   public getDefinition(
-    newPropertyValues: Partial<ArgumentHandlerOptions> = {},
-    wrapperOptions = {}
-  ) {
+    newPropertyValues: Partial<IArgumentHandlerOptions> = {},
+    handlerOptions: HandlerOptions<
+      {
+        abortOnFail?: boolean;
+        activeStatus?: boolean | null;
+        action?: boolean | null;
+        create?: boolean;
+        depthOffset?: number;
+      },
+      Path,
+      Defaults,
+      Options,
+      DefObject
+    > = {}
+  ): DefinitionManagerArgumentHandler<Path, Defaults, Options, DefObject> {
     const { path, definitionsObject } = Object.assign(
       this.getProperties(),
       newPropertyValues
@@ -111,7 +145,7 @@ export class DefinitionManagerArgumentHandler<
       );
     }
 
-    return definitionWrapper(
+    return definitionHandler(
       definition => {
         const newDefinitions: IDefinition[] = this._definitions.slice();
         newDefinitions.push(definition);
@@ -123,7 +157,9 @@ export class DefinitionManagerArgumentHandler<
       },
       path,
       definitionsObject as IDefinition,
-      wrapperOptions
+      typeof handlerOptions === "function"
+        ? handlerOptions(this.getProperties())
+        : handlerOptions
     );
   }
 
@@ -134,19 +170,20 @@ export class DefinitionManagerArgumentHandler<
    * @param newPropertyValues An object of values that overwrite the values
    * stored in the argument handler.
    *
-   * @param wrapperOptions An object of options that can modify the behaviour
-   * of the underlying definitions object processor.
+   * @param handlerOptions An object (or a function that returns an object) of
+   * options that can modify the behaviour of the underlying definitions object
+   * processor.
    */
   public processDefinitionsObject(
-    newPropertyValues: Partial<ArgumentHandlerOptions> = {},
-    wrapperOptions: object = {}
-  ) {
+    newPropertyValues: Partial<IArgumentHandlerOptions> = {},
+    handlerOptions: HandlerOptions<{}, Path, Defaults, Options, DefObject> = {}
+  ): DefinitionManagerArgumentHandler<Path, Defaults, Options, IDefinition> {
     const { definitionsObject, definitionManager } = Object.assign(
       this.getProperties(),
       newPropertyValues
     );
 
-    return definitionsObjectWrapper(
+    return definitionsObjectHandler(
       definitionsObject => {
         const newProperties: LocalArgumentHandlerOptions<
           Path,
@@ -159,7 +196,9 @@ export class DefinitionManagerArgumentHandler<
       },
       definitionManager,
       definitionsObject,
-      wrapperOptions
+      typeof handlerOptions === "function"
+        ? (handlerOptions as Function)(this.getProperties())
+        : handlerOptions
     );
   }
 
@@ -170,26 +209,33 @@ export class DefinitionManagerArgumentHandler<
    * @param newPropertyValues An object of values that overwrite the values
    * stored in the argument handler.
    *
-   * @param wrapperOptions An object of options that can modify the behaviour
-   * of the underlying options processor.
+   * @param handlerOptions An object (or a function that returns an object) of
+   * options that can modify the behaviour of the underlying options processor.
    */
   public processOptions(
-    newPropertyValues: Partial<ArgumentHandlerOptions> = {},
-    wrapperOptions: object = {}
-  ) {
+    newPropertyValues: Partial<IArgumentHandlerOptions> = {},
+    handlerOptions: HandlerOptions<{}, Path, Defaults, Options, DefObject> = {}
+  ): DefinitionManagerArgumentHandler<
+    Path,
+    Defaults,
+    Options & Defaults,
+    DefObject
+  > {
     const { defaults, options } = Object.assign(
       this.getProperties(),
       newPropertyValues
     );
 
-    return optionsWrapper(
+    return optionsHandler(
       options => {
         const newProperties = Object.assign(this.getProperties(), { options });
         return new DefinitionManagerArgumentHandler(newProperties);
       },
       defaults,
       options,
-      wrapperOptions
+      typeof handlerOptions === "function"
+        ? (handlerOptions as Function)(this.getProperties())
+        : handlerOptions
     );
   }
 
@@ -197,19 +243,19 @@ export class DefinitionManagerArgumentHandler<
    * Processes given path from string to array of strings and stores that as
    * path.
    *
-   * @param newPropertyValues An object of values that overwrite the values stored
-   * in the argument handler.
+   * @param newPropertyValues An object of values that overwrite the values
+   * stored in the argument handler.
    *
-   * @param wrapperOptions An object of options that can modify the behaviour
-   * of the underlying path processor.
+   * @param handlerOptions An object (or a function that returns an object) of
+   * options that can modify the behaviour of the underlying path processor.
    */
   public processPath(
-    newPropertyValues: Partial<ArgumentHandlerOptions> = {},
-    wrapperOptions: object = {}
-  ) {
+    newPropertyValues: Partial<IArgumentHandlerOptions> = {},
+    handlerOptions: HandlerOptions<{}, Path, Defaults, Options, DefObject> = {}
+  ): DefinitionManagerArgumentHandler<string[], Defaults, Options, DefObject> {
     const { path } = Object.assign(this.getProperties(), newPropertyValues);
 
-    return pathWrapper(
+    return pathHandler(
       path => {
         const newProperties: LocalArgumentHandlerOptions<
           string[],
@@ -221,13 +267,89 @@ export class DefinitionManagerArgumentHandler<
         return new DefinitionManagerArgumentHandler(newProperties);
       },
       path,
-      wrapperOptions
+      (typeof handlerOptions === "function"
+        ? (handlerOptions as Function)(this.getProperties())
+        : handlerOptions) as {}
     );
   }
 
   /**
    * Calls a callback with an object of stored/processed arguments as the first
-   * argument.
+   * argument. Returns Argument Handler object, where the results of the
+   * callback are used as the parameters for the returned Argument Handler
+   * instance.
+   *
+   * @param callback An function that accepts object of arguments as the first
+   * argument. Available arguments are:
+   *   - `args` - Custom arguments. Default: `[]`
+   *   - `definition` - A value passed as definition value. Default: `""`
+   *   - `definitions` - An array of definitions retrieved by definition
+   * method. Default: `[]`
+   *   - `definitionsObject` - A passed definitions object. Default: `{}`
+   *   - `defaults` - An object of default values that may be overwriten by
+   * values in options. Default: `{}`
+   *   - `lastPathComponent` - A string that specifies property of parental
+   * definitions object where the definition, specified by path, is located.
+   * Default: `""`
+   *   - `options` - An object of values that overwrite the defaults.
+   * Default: `{}`
+   *   - `path` - A string or array of strings specifying the path to a
+   * definition. If as string, path components are separated by dot '.' .
+   * Default: `[]`
+   */
+  public new = (
+    callback: ((
+      properties: LocalArgumentHandlerOptions<
+        Path,
+        Defaults,
+        Options,
+        DefObject
+      >
+    ) => IArgumentHandlerOptions) = props => props as IArgumentHandlerOptions
+  ) => {
+    return new DefinitionManagerArgumentHandler(callback(this.getProperties()));
+  };
+
+  /**
+   * Calls a callback with an object of stored/processed arguments as the first
+   * argument. Returns Argument Handler object. The results of the callback
+   * do not affect the returned Argument Handler instance.
+   *
+   * @param callback An function that accepts object of arguments as the first
+   * argument. Available arguments are:
+   *   - `args` - Custom arguments. Default: `[]`
+   *   - `definition` - A value passed as definition value. Default: `""`
+   *   - `definitions` - An array of definitions retrieved by definition
+   * method. Default: `[]`
+   *   - `definitionsObject` - A passed definitions object. Default: `{}`
+   *   - `defaults` - An object of default values that may be overwriten by
+   * values in options. Default: `{}`
+   *   - `lastPathComponent` - A string that specifies property of parental
+   * definitions object where the definition, specified by path, is located.
+   * Default: `""`
+   *   - `options` - An object of values that overwrite the defaults.
+   * Default: `{}`
+   *   - `path` - A string or array of strings specifying the path to a
+   * definition. If as string, path components are separated by dot '.' .
+   * Default: `[]`
+   */
+  public tap(
+    callback: (
+      properties: LocalArgumentHandlerOptions<
+        Path,
+        Defaults,
+        Options,
+        DefObject
+      >
+    ) => void = props => undefined
+  ) {
+    callback(this.getProperties());
+    return this;
+  }
+
+  /**
+   * Calls a callback with an object of stored/processed arguments as the first
+   * argument. And returns the result of that callback.
    *
    * @param callback An function that accepts object of arguments as the first
    * argument. Available arguments are:

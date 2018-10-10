@@ -1,9 +1,9 @@
 /// <reference path="definition-manager.ts" />
 
 namespace DefinitionInjector {
-  export type ArgumentHandlerOptions = {
+  export type IArgumentHandlerOptions = {
     args: any[];
-    definition: IDefinition[keyof IDefinition];
+    definition: IDefinition["value"];
     definitionManager: IDefinitionManager;
     definitions: IDefinition[];
     definitionsObject: string | IDefinition;

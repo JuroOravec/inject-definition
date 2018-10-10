@@ -1,24 +1,28 @@
 /// <reference path="definition.ts" />
-/// <reference path="options.ts" />
 
 namespace DefinitionInjector {
   export interface IDefinitionManager {
-    definitions: IDefinition;
-    activeDefinitions: IDefinition;
-
     define: (
       path: string | string[],
       definition: string,
-      options?: IOptions
+      options?: object
     ) => void;
 
-    undefine: (path: string | string[], options?: IOptions) => void;
+    undefine: (path: string | string[], options?: object) => void;
 
-    activate: (path: string | string[], options?: IOptions) => void;
+    undefineAll: (options?: object) => void;
 
-    deactivate: (path: string | string[], options?: IOptions) => void;
+    activate: (path: string | string[], options?: object) => void;
 
-    get: (path: string | string[]) => IDefinition[keyof IDefinition];
+    activateAll: () => void;
+
+    deactivate: (path: string | string[], options?: object) => void;
+
+    deactivateAll: () => void;
+
+    get: (path: string | string[]) => IDefinition["value"];
+
+    getAll: (options?: object) => IDefinition | IDefinitionCondensed;
 
     has: (path: string | string[]) => boolean;
   }

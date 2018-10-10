@@ -1,68 +1,86 @@
 /// <reference path="./interface/definition-manager.ts" />
 
 import IDefinition = DefinitionInjector.IDefinition;
+import IDefinitionCondensed = DefinitionInjector.IDefinitionCondensed;
 import IDefinitionManager = DefinitionInjector.IDefinitionManager;
-import IOptions = DefinitionInjector.IOptions;
-
-import { getOrCreateDefinitionParent } from "./lib/get-or-create-definition-parent";
-import { removeEmptyBranch } from "./lib/remove-empty-branch";
 
 import { DefinitionManagerArgumentHandler } from "./argument-handler";
+import { getOrCreateDefinitionParent } from "./lib/get-or-create-definition-parent";
 import { getOrHasDefintion } from "./lib/get-or-has-definition";
 import { copyObject } from "./lib/copy-object";
+import { createDefinition } from "./lib/create-definition";
+import { removeEmptyBranch } from "./lib/branch/remove-empty-branch";
+import { changeBranchActiveStatus } from "./lib/branch/change-branch-active-status";
+import { exportBranch } from "./lib/branch/export-branch";
+import { undefineBranch } from "./lib/branch/undefine-branch";
+import { inactivateBranchPath } from "./lib/branch/inactivate-branch-path";
+import {
+  constructorDefaults,
+  defineDefaults,
+  undefineAllDefaults,
+  getAllDefaults
+} from "./lib/defaults/definition-manager";
+
+const definitionsSym = Symbol("definitions");
 
 /**
  * A class that handles addition, removal, activation, deactivation and
  * existence of definitions.
  *
- * @property `definitions` An object of definitions stored as a tree of nested
- * definition objects, where leafs are definition values.
+ * @method `define` Defines a definition, adding it to the `definitions` object
+ * and optionally (not) activating it.
  *
- * @property `activeDefinitions` An object of definitions stored as a tree of
- * nested definition objects. A subset of `definitions`. Only definitions that
- * have existing path in `activeDefinitions` will be recognized when scanning/
- * generating/injecting text.
+ * @method `undefine` Removes a definition and all its child definitions.
  *
- * @method `define` Defines a definition, adding it to the `definitions` (and
- * optionally `activeDefinitions`) object.
+ * @method `undefineAll` Removes all definitions (or only all (in)active)
  *
- * @method `undefine` Undefines/removes a definiting, removing it from both
- * `definitions` and `activeDefinitions` objects.
+ * @method `activate` Activates an existing definition.
  *
- * @method `activate` Activates an existing definition, adding it to the
- * `activeDefinitions` objects.
+ * @method `activateAll` Activates all definitions.
  *
- * @method `deactivate` Deactivates an existing definition, removing it from
- * the `activeDefinitions` objects.
+ * @method `deactivate` Deactivates an existing definition.
+ *
+ * @method `deactivateAll` Deactivates all definitions.
  *
  * @method `get` Returns a definition specified with a path.
+ *
+ * @method `getAll` Returns definitions tree (full / reduced / condensed) of
+ * all / active / inactive definitions.
  *
  * @method `has` Returns a boolean of whether a definition exists at a
  * specified path.
  */
 export class DefinitionManager implements IDefinitionManager {
-  definitions: IDefinitionManager["definitions"];
-  activeDefinitions: IDefinitionManager["activeDefinitions"];
+  [definitionsSym]: IDefinition;
 
   constructor(
-    options: {
-      definitions?: IDefinitionManager["definitions"];
-      activeDefinitions?: IDefinitionManager["definitions"];
-    } = {}
+    options:
+      | {
+          definitions?: IDefinition;
+        }
+      | IDefinitionManager = {}
   ) {
-    const defaults = { definitions: {}, activeDefinitions: {} };
-    const { definitions, activeDefinitions } = Object.assign(
-      defaults,
-      copyObject(options)
-    );
-    this.definitions = typeof definitions === "object" ? definitions : {};
-    this.activeDefinitions =
-      typeof definitions === "object" ? activeDefinitions : {};
+    let definitions: IDefinition;
+    if (typeof (options as IDefinitionManager).getAll === "function") {
+      definitions = copyObject(
+        (options as IDefinitionManager).getAll()
+      ) as IDefinition;
+    } else {
+      const opt = Object.assign(
+        {},
+        copyObject(constructorDefaults),
+        copyObject(options)
+      );
+      definitions = opt.definitions;
+    }
+
+    this[definitionsSym] =
+      typeof definitions === "object" ? definitions : createDefinition();
   }
 
   /**
    * Adds a definition to the `definitions` object and optionally
-   * also to `activeDefinitions`.
+   * also (not) activates it.
    *
    * @param path A string or array of strings specifying the path to a
    * definition. If as string, path components are separated by dot `'.'` .
@@ -75,67 +93,65 @@ export class DefinitionManager implements IDefinitionManager {
    * Non-active definitions will be ignored when scanning/generating/injecting
    * text. Default: `true`
    */
-  define(
+  public define(
     path: string | string[],
     definition: string,
-    options: IOptions & {
+    options: {
       activate?: boolean;
     } = {}
   ) {
-    const definitionsObject = this.definitions;
-    const defaults = {
-      activate: true
-    };
-
     return new DefinitionManagerArgumentHandler({
       definition,
       options,
       path,
-      defaults,
-      definitionsObject,
-      definitionManager: this
+      defaults: defineDefaults,
+      definitionsObject: this[definitionsSym]
     })
       .processPath()
       .processOptions()
+      .getDefinition({}, ({ options }) => {
+        return { action: options.activate };
+      })
       .finally(
         ({
           definition,
-          definitionManager,
           definitionsObject,
           lastPathComponent,
           options,
           path
         }) => {
-          // TODO(Juro) Add handling for include and exclude options
-
-          const definitionsObjects = [definitionsObject];
-          if (options.activate) {
-            definitionsObjects.push(definitionManager.activeDefinitions);
-          }
-
           // Add definition to definition Objects
-          definitionsObjects.forEach(definitionsObject => {
-            const definitionParent = getOrCreateDefinitionParent(
-              path,
-              definitionsObject
-            );
-            definitionParent[lastPathComponent] = definition;
+          const definitionParent = getOrCreateDefinitionParent(
+            path,
+            definitionsObject,
+            { action: options.activate }
+          );
+
+          const newDefinition = createDefinition({
+            keyword: path.join("."),
+            value: definition,
+            active: options.activate
           });
+          definitionParent.children[lastPathComponent] = newDefinition;
+          if (options.activate === false) {
+            inactivateBranchPath(path, definitionsObject);
+          }
+          removeEmptyBranch(path, definitionsObject);
         }
       );
   }
 
   /**
-   * Removes a definition by removing it from the `definitions` object and
-   * `activeDefinitions` object.
+   * Removes a definition by removing it from the `definitions` object along
+   * with all its child definitions.
    *
    * @param path A string or array of strings specifying the path to a
    * definition. If as string, path components are separated by dot `'.'` .
    *
    * @param options An object of options that can modify the behaviour
-   * of the underlying definition process. Options are:
+   * of the underlying definition process. Options are: NONE
    */
-  undefine(path: string | string[], options: IOptions = {}) {
+  public undefine(path: string | string[], options: object = {}) {
     const definitionWrapperOptions = {
       abortOnFail: false,
       create: false,
@@ -145,23 +161,17 @@ export class DefinitionManager implements IDefinitionManager {
     return new DefinitionManagerArgumentHandler({
       path,
       options,
-      definitionsObject: this.definitions
+      definitionsObject: this[definitionsSym]
     })
       .processPath()
       .processOptions()
       .getDefinition({}, definitionWrapperOptions)
-      .getDefinition(
-        { definitionsObject: this.activeDefinitions },
-        definitionWrapperOptions
-      )
-      .finally(({ path, options, definitions, lastPathComponent }) => {
-        // TODO(Juro) Add handling for include and exclude options
-
+      .finally(({ path, definitions, lastPathComponent }) => {
         // Remove definition from all passed definitions objects
         definitions
           .filter(definition => definition !== null)
           .forEach(definitionsObject => {
-            delete definitionsObject[lastPathComponent];
+            delete definitionsObject.children[lastPathComponent];
 
             // If after the removal, the branch is empty, remove it
             removeEmptyBranch(path, definitionsObject);
@@ -170,94 +180,121 @@ export class DefinitionManager implements IDefinitionManager {
   }
 
   /**
-   * Activates a definition by adding it to the `activeDefinitions` object.
-   * Does nothing if the definition does not exist in the `definitions` object.
+   * Removes all definitions of particular type of active status.
+   *
+   *  @param options An object of options that can modify the behaviour
+   * of the underlying process. Options are:
+   *   - `select` - Type of active status of object that will be
+   * removed. Available values are `'all'`, `'active'`, `'inactive'`.
+   * Default: `'all'`
+   */
+  public undefineAll(options: { select?: "all" | "active" | "inactive" } = {}) {
+    return new DefinitionManagerArgumentHandler({
+      options,
+      defaults: undefineAllDefaults,
+      definitionManager: this
+    })
+      .processOptions()
+      .finally(({ options, definitionManager }) => {
+        let activeStatus: boolean | null;
+        if (options.select === "active") activeStatus = true;
+        else if (options.select === "inactive") activeStatus = false;
+        else activeStatus = null;
+
+        if (activeStatus === null) {
+          Object.keys(this[definitionsSym].children).forEach(key =>
+            this.undefine(key)
+          );
+          return;
+        }
+
+        Object.keys(this[definitionsSym].children).forEach(key => {
+          undefineBranch(
+            definitionManager,
+            this[definitionsSym].children[key],
+            {
+              activeStatus
+            }
+          );
+        });
+      });
+  }
+
+  /**
+   * Activates a definition. Does nothing if the definition is not defined.
    *
    * @param path A string or array of strings specifying the path to a
    * definition. If as string, path components are separated by dot `'.'` .
    *
    * @param options An object of options that can modify the behaviour
-   * of the underlying definition process. Options are:
+   * of the underlying definition process. Options are: NONE
    */
-  activate(path: string | string[], options: IOptions = {}) {
+  public activate(path: string | string[], options: object = {}) {
     const definitionsParentOptions = {
-      abortOnFail: false,
-      create: true,
-      depthOffset: -1
-    };
-    const activeDefinitionsParentOptions = {
-      abortOnFail: false,
-      create: true,
-      depthOffset: -1
+      create: false,
+      depthOffset: -1,
+      action: true
     };
 
     return new DefinitionManagerArgumentHandler({
       path,
       options,
-      definitionsObject: this.definitions
+      definitionsObject: this[definitionsSym]
     })
       .processPath()
       .processOptions()
       .getDefinition({}, definitionsParentOptions)
-      .getDefinition(
-        { definitionsObject: this.activeDefinitions },
-        activeDefinitionsParentOptions
-      )
-      .finally(({ definitions, lastPathComponent, options, path }) => {
-        if (!definitions[0].hasOwnProperty(lastPathComponent)) return;
+      .finally(({ definitions, lastPathComponent }) => {
+        if (!definitions[0].children.hasOwnProperty(lastPathComponent)) return;
 
-        // TODO(Juro) Add handling for include and exclude options
+        definitions[0].children[lastPathComponent].active = true;
+      });
+  }
 
-        // Enable the branch by adding it to the activeDefinitions definition
-        // object
-        if (!definitions[1].hasOwnProperty(lastPathComponent)) {
-          definitions[1][lastPathComponent] = undefined;
+  /**
+   * Activates all definitions.
+   */
+  public activateAll() {
+    changeBranchActiveStatus(this[definitionsSym], true);
+  }
+
+  /**
+   * Deactivates a definition. Does nothing if the definition is not defined.
+   *
+   * @param path A string or array of strings specifying the path to a
+   * definition. If as string, path components are separated by dot `'.'` .
+   *
+   * @param options An object of options that can modify the behaviour
+   * of the underlying definition process. Options are: NONE
+   */
+  public deactivate(path: string | string[], options: object = {}) {
+    const definitionOptions = {
+      create: false,
+      depthOffset: -1,
+      action: false
+    };
+
+    return new DefinitionManagerArgumentHandler({
+      path,
+      options,
+      definitionsObject: this[definitionsSym]
+    })
+      .processPath()
+      .processOptions()
+      .getDefinition({}, definitionOptions)
+      .finally(({ path, definitions, lastPathComponent, options }) => {
+        if (definitions[0].children.hasOwnProperty(lastPathComponent)) {
+          definitions[0].children[lastPathComponent].active = false;
+          inactivateBranchPath(path, this[definitionsSym]);
         }
       });
   }
 
   /**
-   * Deactivates a definition by removing it from the `activeDefinitions`
-   * object. Does nothing if the definition does not exist in the `definitions` object.
-   *
-   * @param path A string or array of strings specifying the path to a
-   * definition. If as string, path components are separated by dot `'.'` .
-   *
-   * @param options An object of options that can modify the behaviour
-   * of the underlying definition process. Options are:
+   * Deactivates all definitions.
    */
-  deactivate(path: string | string[], options: IOptions = {}) {
-    const definitionOptions = {
-      create: false,
-      depthOffset: -1
-    };
-
-    return new DefinitionManagerArgumentHandler({
-      path,
-      options,
-      definitionsObject: this.activeDefinitions
-    })
-      .processPath()
-      .processOptions()
-      .getDefinition({}, definitionOptions)
-      .finally(
-        ({
-          definitions,
-          definitionsObject,
-          lastPathComponent,
-          options,
-          path
-        }) => {
-          // TODO(Juro) Add handling for include and exclude options
-
-          // Disable the definition by removing it from this.activeDefinitions
-          // definition object.
-          if (definitions[0].hasOwnProperty(lastPathComponent)) {
-            delete definitions[0][lastPathComponent];
-            removeEmptyBranch(path, definitionsObject);
-          }
-        }
-      );
+  public deactivateAll() {
+    changeBranchActiveStatus(this[definitionsSym], false);
   }
 
   /**
@@ -269,19 +306,39 @@ export class DefinitionManager implements IDefinitionManager {
    *
    * @param options An object of options that can modify the behaviour
    * of the underlying definition process. Options are:
-   *   - `definitionsObject` - Type of definitions object that will be searched
-   * through. Available values are `'all'`, `'active'`. Default: `'all'`
+   *   - `select` - Type of definitions object that will be searched
+   * through. Available values are `'all'`, `'active'`, `'inactive'`. Default: `'all'`
    */
-  get(
+  public get(
     path: string | string[],
-    options: IOptions & { definitionsObject?: "all" | "active" } = {}
-  ): IDefinition[keyof IDefinition] {
-    return getOrHasDefintion(
-      this,
-      path,
-      false,
-      options
-    ) as IDefinition[keyof IDefinition];
+    options: {
+      select?: "all" | "active" | "inactive";
+    } = {}
+  ): IDefinition["value"] {
+    return getOrHasDefintion(this, path, false, options);
+  }
+
+  public getAll(
+    options: {
+      select?: "all" | "active" | "inactive";
+      type?: "full" | "partial" | "condensed";
+    } = {}
+  ): IDefinition | IDefinitionCondensed {
+    return new DefinitionManagerArgumentHandler({
+      options,
+      defaults: getAllDefaults
+    })
+      .processOptions()
+      .finally(({ options }) => {
+        let activeStatus: boolean | null;
+        if (options.select === "active") activeStatus = true;
+        else if (options.select === "inactive") activeStatus = false;
+        else activeStatus = null;
+        return exportBranch(this[definitionsSym], {
+          type: options.type,
+          activeStatus
+        });
+      });
   }
 
   /**
@@ -293,13 +350,15 @@ export class DefinitionManager implements IDefinitionManager {
    *
    * @param options An object of options that can modify the behaviour
    * of the underlying definition process. Options are:
-   *   - `definitionsObject` - Type of definitions object that will be searched
-   * through. Available values are `'all'`, `'active'`. Default: `'all'`
+   *   - `select` - Type of definitions object that will be searched
+   * through. Available values are `'all'`, `'active'`, `'inactive'`. Default: `'all'`
    */
-  has(
+  public has(
     path: string | string[],
-    options: IOptions & { definitionsObject?: "all" | "active" } = {}
+    options: {
+      select?: "all" | "active" | "inactive";
+    } = {}
   ): boolean {
-    return getOrHasDefintion(this, path, true, options) as boolean;
+    return getOrHasDefintion(this, path, true, options);
   }
 }

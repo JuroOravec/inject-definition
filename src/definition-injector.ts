@@ -5,30 +5,35 @@ import { DefinitionManager } from "./definition-manager";
 import { preventVariableClashes } from "./lib/prevent-variable-clashes";
 import { mapDefinitionBranchesToObject } from "./lib/map-definition-branches-to-object";
 import { setMethod } from "./lib/set-method";
-import { defaultVariableNameRetriever } from "./lib/default-variable-name-retriever";
-import { defaultVariableNameReplacer } from "./lib/default-variable-name-replacer";
-import { defaultDeclarationFormatter } from "./lib/default-declaration-formatter";
-import { defaultMinifier } from "./lib/default-minifier";
 import { stringify } from "./lib/stringify";
 
+import IDefinition = DefinitionInjector.IDefinition;
+import IDefinitionEntry = DefinitionInjector.IDefinitionEntry;
 import IDefinitionInjector = DefinitionInjector.IDefinitionInjector;
 import IVariableNameRetriever = DefinitionInjector.IVariableNameRetriever;
 import IVariableNameReplacer = DefinitionInjector.IVariableNameReplacer;
 import IDeclarationFormatter = DefinitionInjector.IDeclarationFormatter;
 import IMinifier = DefinitionInjector.IMinifier;
+import {
+  constructorDefaults,
+  injectDefaults,
+  generateDefaults,
+  scanDefaults
+} from "./lib/defaults/definition-injector";
+import { resolveDefinitionDependencies } from "./lib/resolve-definition-dependencies";
 
 type ScanOptions = {
-  overwriteActiveDefinitions?: boolean;
+  overwrite?: boolean;
   delimiter?: string | false;
 };
 
-type ScanOptionsNoDelimeter = {
-  overwriteActiveDefinitions?: boolean;
+type ScanOptionsNoDelimiter = {
+  overwrite?: boolean;
   delimiter?: false;
 };
 
-type ScanOptionsWithDelimeter = {
-  overwriteActiveDefinitions?: boolean;
+type ScanOptionsWithDelimiter = {
+  overwrite?: boolean;
   delimiter?: string;
 };
 
@@ -36,11 +41,21 @@ type GenerateOptions = {
   minify?: boolean;
 } & ScanOptions;
 
+type GenerateOptionsNoDelimiter = {
+  overwrite?: boolean;
+  delimiter?: false;
+} & ScanOptions;
+
+type GenerateOptionsWithDelimiter = {
+  overwrite?: boolean;
+  delimiter?: string;
+} & ScanOptions;
+
 type InjectOptions = {
-  includeDefinitionsObjects?: boolean;
+  reference?: boolean;
   insertLocation?: "start" | "replace" | "end";
   separator?: string;
-  delimeter?: string;
+  delimiter?: string;
 } & GenerateOptions;
 
 // Tags used to insert definition values into string
@@ -58,14 +73,6 @@ const declarationFormatterSym = Symbol("declarationFormatter");
  * DefinitionInjector prefixes/suffixes/replaces user-defined definitions,
  * macros, constants or other snippets to a text, if the orresponding keywords
  * are present.
- *
- * @property `definitions` An object of definitions stored as a tree of nested
- * definition objects, where leafs are definition values.
- *
- * @property `activeDefinitions` An object of definitions stored as a tree of
- * nested definition objects. A subset of `definitions`. Only definitions that
- * have existing path in `activeDefinitions` will be recognized when scanning/
- * generating/injecting text.
  *
  * @property `declarationFormatter` A function that defines how a definitions
  * object should be formatted when being declared. E.g. if given definition
@@ -89,23 +96,6 @@ const declarationFormatterSym = Symbol("declarationFormatter");
  * a new name as the 3rd argument, and returns a string (the updated
  * definition)
  *
- * @method `define` Defines a definition, adding it to the `definitions` (and
- * optionally `activeDefinitions`) object.
- *
- * @method `undefine` Undefines/removes a definiting, removing it from both
- * `definitions` and `activeDefinitions` objects.
- *
- * @method `activate` Activates an existing definition, adding it to the
- * `activeDefinitions` objects.
- *
- * @method `deactivate` Deactivates an existing definition, removing it from
- * the `activeDefinitions` objects.
- *
- * @method `get` Returns a definition specified with a path.
- *
- * @method `has` Returns a boolean of whether a definition exists at a
- * specified path.
- *
  * @method `scan` Scans a text and returns an array of keywords (names) of
  * active definitions that were found.
  *
@@ -118,39 +108,28 @@ const declarationFormatterSym = Symbol("declarationFormatter");
  */
 export class DefinitionInjector extends DefinitionManager
   implements IDefinitionInjector {
-  private [minifierSym]: IMinifier;
-  private [variableNameReplacerSym]: IVariableNameReplacer;
-  private [variableNameRetrieverSym]: IVariableNameRetriever;
-  private [declarationFormatterSym]: IDeclarationFormatter;
+  declarationFormatter: IDeclarationFormatter;
+  minifier: IMinifier;
+  variableNameReplacer: IVariableNameReplacer;
+  variableNameRetriever: IVariableNameRetriever;
 
   constructor(
     options: {
-      activeDefinitions?: IDefinitionInjector["activeDefinitions"];
-      definitions?: IDefinitionInjector["definitions"];
+      definitions?: IDefinition;
       declarationFormatter?: IDeclarationFormatter;
       minifier?: IMinifier;
       variableNameReplacer?: IVariableNameReplacer;
       variableNameRetriever?: IVariableNameRetriever;
     } = {}
   ) {
-    const defaults = {
-      target: "",
-      declarationFormatter: defaultDeclarationFormatter,
-      minifier: defaultMinifier,
-      variableNameRetriever: defaultVariableNameRetriever,
-      variableNameReplacer: defaultVariableNameReplacer
-    };
-
     const {
-      activeDefinitions,
-      definitions,
       declarationFormatter,
       minifier,
       variableNameReplacer,
       variableNameRetriever
-    } = Object.assign(defaults, options);
+    } = Object.assign({}, constructorDefaults, options);
 
-    super({ activeDefinitions, definitions });
+    super(options);
 
     const methods = [
       // A method that formats the stringified definition branches.
@@ -220,9 +199,8 @@ export class DefinitionInjector extends DefinitionManager
    * @param options An object of options that can modify the behaviour of the
    * scanning process. Options are:
    *   - `delimiter` - A string that joins the definition values into a string.
-   * If set to `false`, an array of definition values is returned instead of a
-   * string. Default: `'\n'`
-   *   - `includeDefinitionsObjects` - Whether the resulting string should also
+   * Default: `'\n'`
+   *   - `reference` - Whether the resulting string should also
    * include definitions objects for each of the top-level keywords. Useful if
    * the definition keywords are nested (E.g. `'a.b.c'`), and the definition
    * values are programmatically referenced. E.g. if definition `'foo.bar'` is
@@ -236,37 +214,29 @@ export class DefinitionInjector extends DefinitionManager
    *   - `minify` - Whether the injected definitions should be minified according
    * to the user-defined minifier function. has no effect if 'insertLocation'
    * is 'replace'. Default: `false`
-   *   - `overwriteActiveDefinitions` - Whether the active definitions should
+   *   - `overwrite` - Whether the active definitions should
    * be overwritten with the definitions found in the string. Default: `false`
    *   - `separator` - A string that joins definitions and original text into a
    * string. Default: `'\n'`
    */
   public inject(textTarget: string, options: InjectOptions = {}) {
-    const defaults = {
-      delimeter: "\n",
-      includeDefinitionsObjects: false,
-      insertLocation: "start",
-      minify: false,
-      overwriteActiveDefinitions: false,
-      separator: "\n",
-      target: ""
-    };
     const {
-      delimeter,
-      includeDefinitionsObjects,
+      delimiter,
+      reference,
       insertLocation,
       minify,
-      overwriteActiveDefinitions,
+      overwrite,
       separator,
       target
-    } = Object.assign(defaults, options, { target: textTarget });
+    } = Object.assign({}, injectDefaults, options, { target: textTarget });
 
     // If target was passed or the instance has one, use that
     if (typeof target !== "string") return;
 
     // Get definition keywords (== path with dots separating path components)
     const keywords = this.scan(target, {
-      overwriteActiveDefinitions
+      overwrite,
+      delimiter: false
     });
 
     const stringifiedDefinitions: string[] = [];
@@ -289,17 +259,31 @@ export class DefinitionInjector extends DefinitionManager
     // "... Array.map(1, 2, 3) ..."
     //
     // This will get processed correctly
-    if (includeDefinitionsObjects && insertLocation !== "replace") {
+    if (reference && insertLocation !== "replace") {
       // Process definitions such that no two definitions have the same
       // variable name (only first variable taken into consideration)
       // based on user-defined parameters.
       const definitionEntries = keywords.map(keyword => {
-        return { keyword, value: this.get(keyword) };
+        const definitionValue = this.get(keyword);
+        const definitionEntry: IDefinitionEntry = {
+          keyword,
+          value: definitionValue,
+          dependencies: this.scan(stringify(definitionValue), {
+            delimiter: false
+          })
+        };
+        return definitionEntry;
       });
+
+      const orderedDefinitions = resolveDefinitionDependencies(
+        this,
+        definitionEntries
+      );
+
       const processedDefinitions = preventVariableClashes(
-        definitionEntries,
-        this[variableNameRetrieverSym],
-        this[variableNameReplacerSym]
+        orderedDefinitions,
+        this.variableNameRetriever,
+        this.variableNameReplacer
       );
 
       stringifiedDefinitions.push(
@@ -318,19 +302,19 @@ export class DefinitionInjector extends DefinitionManager
       // Format the way the branches are defined using a user-defined
       // function, which takes the branch name, and stringified branch.
       const formattedBranches = Object.keys(stringifiedBranches).map(branch =>
-        this[declarationFormatterSym](branch, stringifiedBranches[
-          branch
-        ] as string)
+        this.declarationFormatter(branch, stringifiedBranches[branch])
       );
 
-      const joinedStringifiedDefinitions = stringifiedDefinitions.join(
-        delimeter
-      );
+      const joinedDefinitions = [
+        ...stringifiedDefinitions,
+        ...formattedBranches
+      ].join(delimiter);
+
       const finalDefinitions = minify
-        ? this[minifierSym](joinedStringifiedDefinitions)
-        : joinedStringifiedDefinitions;
+        ? this.minifier(joinedDefinitions)
+        : joinedDefinitions;
 
-      textToJoin.push(finalDefinitions, ...formattedBranches);
+      textToJoin.push(finalDefinitions);
     } else {
       // If the definitions object is not necessary (E.g. in case of textual
       // definitions, instead of a programmatic ones) the definitions are
@@ -340,11 +324,12 @@ export class DefinitionInjector extends DefinitionManager
       );
 
       const joinedStringifiedDefinitions = stringifiedDefinitions.join(
-        delimeter
+        delimiter
       );
-      const finalDefinitions = minify
-        ? this[minifierSym](joinedStringifiedDefinitions)
-        : joinedStringifiedDefinitions;
+      const finalDefinitions =
+        minify && insertLocation !== "replace"
+          ? this.minifier(joinedStringifiedDefinitions)
+          : joinedStringifiedDefinitions;
 
       textToJoin.push(finalDefinitions);
     }
@@ -372,7 +357,9 @@ export class DefinitionInjector extends DefinitionManager
     }
 
     // Join the definitions (optionally definitions object) and target text into single string
-    const joinedText = textToJoin.join(separator || "");
+    const joinedText = textToJoin
+      .filter(text => text !== "")
+      .join(separator || "");
     return joinedText;
   }
 
@@ -394,45 +381,49 @@ export class DefinitionInjector extends DefinitionManager
    * If set to `false`, an array of definition values is returned instead of a
    * string. Default: `false`
    *   - `minify` - Whether the resulting string should be minified according
-   * to the user-defined minifier function. Has effect only when `delimeter` is
+   * to the user-defined minifier function. Has effect only when `delimiter` is
    * a string. Default: `false`
-   *   - `overwriteActiveDefinitions` - Whether the active definitions should
+   *   - `overwrite` - Whether the active definitions should
    * be overwritten with the definitions found in the string. Default: `false`
    */
+  public generate(
+    targetText: string,
+    options?: GenerateOptionsNoDelimiter
+  ): string[];
+  public generate(
+    targetText: string,
+    options?: GenerateOptionsWithDelimiter
+  ): string;
   public generate(targetText: string, options: GenerateOptions = {}) {
-    const defaults = {
-      minify: false,
-      overwriteActiveDefinitions: false,
-      delimiter: false as string | false,
-      target: ""
-    };
-    const {
-      minify,
-      overwriteActiveDefinitions,
-      delimiter,
-      target
-    } = Object.assign(defaults, options, { target: targetText });
+    const { minify, overwrite, delimiter, target } = Object.assign(
+      {},
+      generateDefaults,
+      options,
+      { target: targetText }
+    );
 
     if (typeof target !== "string") return;
 
     // Get values of definitions found in the target text
     const validDefinitions = this.scan(target, {
-      overwriteActiveDefinitions
+      overwrite,
+      delimiter: false
     });
     const definitionValues = validDefinitions.map(definition =>
-      this.get(definition)
+      this.get(definition, { select: "active" })
     );
 
     // Return the definition values either as as array or as a string
     if (delimiter === false) return definitionValues;
-    return definitionValues
-      .map(value => {
-        const valueAsString = stringify(value);
-        if (minify) {
-          return this[minifierSym](valueAsString);
-        } else return valueAsString;
-      })
+
+    const stringifiedDefinitions = definitionValues
+      .map(value => stringify(value))
       .join(delimiter);
+
+    if (minify) {
+      return this.minifier(stringifiedDefinitions);
+    }
+    return stringifiedDefinitions;
   }
 
   /**
@@ -451,55 +442,46 @@ export class DefinitionInjector extends DefinitionManager
    *   - `delimiter` - A string that joins the definition keywords into a
    * string. If set to `false`, an array of definition values is returned
    * instead of a string. Default: `false`
-   *   - `overwriteActiveDefinitions` - Whether the active definitions should
+   *   - `overwrite` - Whether the active definitions should
    * be overwritten with the definitions found in the string. Default: `false`
    */
-  public scan(targetText: string, options: ScanOptionsNoDelimeter): string[];
-  public scan(targetText: string, options: ScanOptionsWithDelimeter): string;
+  public scan(targetText: string, options?: ScanOptionsNoDelimiter): string[];
+  public scan(targetText: string, options?: ScanOptionsWithDelimiter): string;
   public scan(targetText: string, options: ScanOptions = {}) {
-    const defaults = {
-      delimeter: false as string | false,
-      overwriteActiveDefinitions: false,
-      target: ""
-    };
-    const { delimeter, overwriteActiveDefinitions, target } = Object.assign(
-      defaults,
+    const { delimiter, overwrite, target } = Object.assign(
+      scanDefaults,
       options,
       { target: targetText }
     );
     if (typeof target !== "string") return;
 
+    if (overwrite) {
+      this.deactivateAll();
+    }
     // Based on the top-level matched keywords, search for full keywords
-    const ownDefinitionKeys = Object.keys(this.definitions).map(
-      definitionKey => {
-        // Take the whole word that matched
-        const definitionKeyRegExp = new RegExp(
-          definitionKey + "(\\.\\w+)*",
-          "g"
-        );
-        const matchedDefinitions = target.match(definitionKeyRegExp) || [];
+    const ownDefinitionKeys = Object.keys(
+      (this.getAll() as IDefinition).children
+    ).map(definitionKey => {
+      // Take the whole word that matched
+      const definitionKeyRegExp = new RegExp(definitionKey + "(\\.\\w+)*", "g");
+      const matchedDefinitions = target.match(definitionKeyRegExp) || [];
 
-        // Filter out invalid/unknown definitions
-        const ownMatchedDefinitions = matchedDefinitions.filter(definitionKey =>
-          this.has(definitionKey)
-        );
+      // Filter out invalid/unknown definitions
+      const ownMatchedDefinitions = matchedDefinitions.filter(definitionKey =>
+        this.has(definitionKey)
+      );
 
-        // Activate the valid definitions
-        if (overwriteActiveDefinitions) {
-          // Disable all previously detected definitions.
-          this.activeDefinitions = {};
-          ownMatchedDefinitions.forEach(definition =>
-            this.activate(definition)
-          );
-          return ownMatchedDefinitions;
-        } else {
-          // Else filter out definitions that are not in activeDefinitions
-          return ownMatchedDefinitions.filter(definition =>
-            this.has(definition, { definitionsObject: "active" })
-          );
-        }
+      // Activate the valid definitions
+      if (overwrite) {
+        ownMatchedDefinitions.forEach(definition => this.activate(definition));
+        return ownMatchedDefinitions;
+      } else {
+        // Else filter out definitions that are not in activeDefinitions
+        return ownMatchedDefinitions.filter(definition =>
+          this.has(definition, { select: "active" })
+        );
       }
-    );
+    });
 
     // Flatten the array (in case there was more definition for any top-leve
     // keyword)
@@ -512,8 +494,8 @@ export class DefinitionInjector extends DefinitionManager
       []
     );
 
-    if (delimeter !== false) {
-      return definitionKeys.join(delimeter);
+    if (delimiter !== false) {
+      return definitionKeys.join(delimiter);
     } else {
       return definitionKeys;
     }

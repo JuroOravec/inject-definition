@@ -1,9 +1,8 @@
-/// <reference path="../interface/definition-injector" />
+/// <reference path="../interface/definition-injector.ts" />
 
-import IDefinition = DefinitionInjector.IDefinition;
+import IDefinitionCondensed = DefinitionInjector.IDefinition;
 
 import { DefinitionManager } from "../definition-manager";
-
 import { stringify } from "./stringify";
 
 /**
@@ -29,7 +28,7 @@ export function mapDefinitionBranchesToObject(
   closingTag: string,
   quoteMark: string = "'"
 ) {
-  const stringifiedDefinitionsObject = {} as IDefinition;
+  const stringifiedDefinitionsObject = {} as IDefinitionCondensed;
 
   const definitionManager = new DefinitionManager();
 
@@ -54,11 +53,12 @@ export function mapDefinitionBranchesToObject(
     quoteMark + "?" + openingTag + "|" + closingTag + quoteMark + "?",
     "g"
   );
-  Object.keys(definitionManager.definitions).forEach(branchKey => {
-    const branch = definitionManager.definitions[branchKey];
+  const branches = definitionManager.getAll({ type: "condensed" });
+  Object.keys(branches).forEach(branchKey => {
+    const branch = branches[branchKey];
     const branchAsString = stringify(branch);
-
     const stringifiedDefinition = branchAsString.replace(tagsRegExp, "");
+
     stringifiedDefinitionsObject[branchKey] = stringifiedDefinition;
   });
 

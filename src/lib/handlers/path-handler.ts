@@ -1,6 +1,4 @@
-/// <reference path="../interface/definition-manager.ts" />
-
-import { processDefinitionManagerPath } from "./process-definition-manager-path";
+/// <reference path="../../interface/definition-manager.ts" />
 
 /**
  * Processes and validates path. Calls passed callback if and only if the path
@@ -14,16 +12,22 @@ import { processDefinitionManagerPath } from "./process-definition-manager-path"
  * @param path A string or array of strings that points to a definition within
  * a definitions object structure.
  */
-export function pathWrapper<R>(
+export function pathHandler<R>(
   callback: (path: string[], ...args: any[]) => R,
   path: string | string[],
   ...args: any[]
 ) {
-  const pathAsArray = processDefinitionManagerPath(path);
+  const pathAsArray: string[] = [];
 
-  if (pathAsArray.length === 0) {
+  // Converts path to array of strings
+  if (typeof path === "string") pathAsArray.push(...path.split("."));
+  else if (Array.isArray(path)) pathAsArray.push(...path);
+
+  const cleanedPath = pathAsArray.filter(item => item !== "");
+
+  if (cleanedPath.length === 0) {
     console.warn("Invalid definition keyword.");
     return;
   }
-  return callback(pathAsArray, ...args);
+  return callback(cleanedPath, ...args);
 }

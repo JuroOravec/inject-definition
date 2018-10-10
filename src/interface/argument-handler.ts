@@ -1,27 +1,37 @@
 /// <reference path="definition-manager.ts" />
 
 namespace DefinitionInjector {
-  export interface ArgumentHandler {
+  export interface IArgumentHandler {
     getDefinition: (
-      newPropertyValues?: Partial<ArgumentHandlerOptions>,
+      newPropertyValues?: Partial<IArgumentHandlerOptions>,
       options?: object
-    ) => ArgumentHandler;
+    ) => IArgumentHandler;
 
     processDefinitionsObject: (
-      newPropertyValues?: Partial<ArgumentHandlerOptions>,
+      newPropertyValues?: Partial<IArgumentHandlerOptions>,
       options?: object
-    ) => ArgumentHandler;
+    ) => IArgumentHandler;
 
     processOptions: (
-      newPropertyValues?: Partial<ArgumentHandlerOptions>,
+      newPropertyValues?: Partial<IArgumentHandlerOptions>,
       options?: object
-    ) => ArgumentHandler;
+    ) => IArgumentHandler;
 
     processPath: (
-      newPropertyValues?: Partial<ArgumentHandlerOptions>,
+      newPropertyValues?: Partial<IArgumentHandlerOptions>,
       options?: object
-    ) => ArgumentHandler;
+    ) => IArgumentHandler;
 
-    finally: (callback: (opt: Partial<ArgumentHandlerOptions>) => any) => any;
+    tap: (
+      callback: (opt: Partial<IArgumentHandlerOptions>) => void
+    ) => IArgumentHandler;
+
+    new: (
+      callback: (
+        opt: Partial<IArgumentHandlerOptions>
+      ) => IArgumentHandlerOptions
+    ) => IArgumentHandler;
+
+    finally: (callback: (opt: Partial<IArgumentHandlerOptions>) => any) => any;
   }
 }

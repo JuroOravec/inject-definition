@@ -40,6 +40,6 @@
     "deepcopy": "^1.0.0",
     "jest": "^23.6.0",
     "obj-stringify": "^1.0.0",
-    "yarn": "^1.9.4"
+    "toposort": "^2.0.2"
   }
 }

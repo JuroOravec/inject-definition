@@ -1,4 +1,4 @@
-/// <reference path="../interface/definition-injector" />
+/// <reference path="../interface/definition-injector.ts" />
 
 import { stringify } from "./stringify";
 
@@ -28,49 +28,63 @@ export function preventVariableClashes(
    * definitions.
    */
   const counter = {};
-  const definitions = definitionEntries.map(({ keyword, value }) => {
-    const definition = stringify(value);
+  const definitions = definitionEntries.map(
+    ({ keyword, value, dependencies }) => {
+      const definition = stringify(value);
 
-    // Retrieve the name of the first defined variable as specified by
-    // user-defined methods.
-    const varName = variableNameRetriever(definition);
+      // Retrieve the name of the first defined variable as specified by
+      // user-defined methods.
+      const varName = variableNameRetriever(definition);
 
-    // Do not set the internal variable name if invalid type or none found
-    if (
-      (typeof varName !== "number" && typeof varName !== "string") ||
-      varName === ""
-    ) {
-      throw TypeError(
-        `Value of Type ${typeof varName} cannot be used as a variable name.`
+      // Do not set the internal variable name if invalid type or none found
+      if (
+        (typeof varName !== "number" && typeof varName !== "string") ||
+        varName === ""
+      ) {
+        throw TypeError(
+          `Value of Type ${typeof varName} cannot be used as a variable name.`
+        );
+      }
+
+      // Update counter and create internal variable name
+      if (counter.hasOwnProperty(varName)) counter[varName] += 1;
+      else counter[varName] = 0;
+
+      /** Variable name with prefixed `_` and suffixed counter. E.g. `_var1` */
+      const internalVarName = "_" + varName + counter[varName];
+
+      // Replace the variable name to a new one at a location specified by
+      // the user-defined function
+      const definitionWithInternalName = variableNameReplacer(
+        definition,
+        varName,
+        internalVarName
       );
+
+      if (typeof definitionWithInternalName !== "string") {
+        throw TypeError(
+          "Method variableNameReplacer must return a stringified definition"
+        );
+      }
+
+      return {
+        dependencies,
+        externalKeyword: keyword,
+        internalKeyword: internalVarName,
+        value: definitionWithInternalName
+      };
     }
+  );
 
-    // Update counter and create internal variable name
-    if (counter.hasOwnProperty(varName)) counter[varName] += 1;
-    else counter[varName] = 0;
-
-    /** Variable name with prefixed `_` and suffixed counter. E.g. `_var1` */
-    const internalVarName = "_" + varName + counter[varName];
-
-    // Replace the variable name to a new one at a location specified by
-    // the user-defined function
-    const definitionWithInternalName = variableNameReplacer(
-      definition,
-      varName,
-      internalVarName
-    );
-
-    if (typeof definitionWithInternalName !== "string") {
-      throw TypeError(
-        "Method variableNameReplacer must return a stringified definition"
+  // For each dependency within definitions, replace them to the internal names
+  definitions.forEach(definition => {
+    definition.dependencies.forEach(dependency => {
+      const { externalKeyword, internalKeyword } = definitions.find(
+        definition => definition.externalKeyword === dependency
       );
-    }
-
-    return {
-      externalKeyword: keyword,
-      internalKeyword: internalVarName,
-      value: definitionWithInternalName
-    };
+      const regex = new RegExp(externalKeyword.replace(/\./g, "\\."), "g");
+      definition.value = definition.value.replace(regex, internalKeyword);
+    });
   });
 
   return definitions;

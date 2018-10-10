@@ -1,7 +1,7 @@
 /// <reference path="../interface/definition-manager.ts" />
 
 import IDefinitionManager = DefinitionInjector.IDefinitionManager;
-import IOptions = DefinitionInjector.IOptions;
+import IDefinition = DefinitionInjector.IDefinition;
 
 import { DefinitionManagerArgumentHandler } from "../argument-handler";
 import { search } from "./search";
@@ -19,7 +19,7 @@ import { search } from "./search";
  * found definition. This setting overrides user-defined setting.
  *
  * @param options An object of options:
- *   - `definitionsObject` - Specify which definitions object should be used.
+ *   - `select` - Specify which definitions object should be used.
  * Available options: `all` or `active`. Default: `all`
  *
  * @param defaults An object with default values that can be overriden with
@@ -28,14 +28,36 @@ import { search } from "./search";
 export function getOrHasDefintion(
   definitionManager: IDefinitionManager,
   path: string | string[],
+  returnAsBoolean: false,
+  options: {
+    select?: "all" | "active" | "inactive";
+  }
+): IDefinition["value"];
+export function getOrHasDefintion(
+  definitionManager: IDefinitionManager,
+  path: string | string[],
+  returnAsBoolean: true,
+  options: {
+    select?: "all" | "active" | "inactive";
+  }
+): boolean;
+export function getOrHasDefintion(
+  definitionManager: IDefinitionManager,
+  path: string | string[],
   returnAsBoolean: boolean,
-  options: IOptions & {
-    definitionsObject?: "all" | "active";
-  } = {},
-  defaults: IOptions & object = {}
+  options: {
+    select?: "all" | "active" | "inactive";
+  } = {}
 ) {
-  const definitionsObject =
-    options.definitionsObject || definitionManager.definitions;
+  let activeStatus: boolean | null;
+  if (options.select === "active") activeStatus = true;
+  else if (options.select === "inactive") activeStatus = false;
+  else activeStatus = null;
+
+  const defaults = {
+    activeStatus
+  };
+  const definitionsObject = options.select || "all";
 
   return new DefinitionManagerArgumentHandler({
     options,

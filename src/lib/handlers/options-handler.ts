@@ -1,4 +1,4 @@
-/// <reference path="../interface/definition-manager.ts" />
+/// <reference path="../../interface/definition-manager.ts" />
 
 /**
  * Assigns user-defined options to the default values. Calls passed callback,
@@ -13,7 +13,7 @@
  *
  * @param options An object with user-defined options.
  */
-export function optionsWrapper<CBResult, O1 extends object, O2 extends object>(
+export function optionsHandler<CBResult, O1 extends object, O2 extends object>(
   callback: (options: O1 & O2, ...args: any[]) => CBResult,
   defaults: O1 = {} as O1,
   options: O2 = {} as O2,

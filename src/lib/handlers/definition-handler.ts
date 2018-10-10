@@ -1,15 +1,11 @@
-/// <reference path="../interface/definition-manager.ts" />
+/// <reference path="../../interface/definition-manager.ts" />
 
 import IDefinition = DefinitionInjector.IDefinition;
 
-import { getOrCreateDefinitionParent } from "./get-or-create-definition-parent";
-import { DefinitionManagerArgumentHandler } from "../argument-handler";
-
-type DefinitionWrapperOptions = {
-  abortOnFail?: boolean;
-  create: boolean;
-  depthOffset: number;
-};
+import { DefinitionManagerArgumentHandler } from "../../argument-handler";
+import { getOrCreateDefinitionParent } from "../get-or-create-definition-parent";
+import { createDefinition } from "../create-definition";
+import { defaults } from "../defaults/handlers/definition-handler";
 
 /**
  * Looks up specified definition. Runs the passed callback if and only if
@@ -25,27 +21,35 @@ type DefinitionWrapperOptions = {
  * @param definitionsObject A definitions object that is searched through.
  *
  * @param options An object of options:
- *   - `abortOnFail` - Whether the wrapper should not proceed if definition
+ *   - `abortOnFail` - Whether the handler should not proceed if definition
  * is not found or it is null. Default: `true`
+ *   - `action` - boolean or null, whether the newly created object and the path
+ * to it (if 'create': true) should be explicitly actived, inactived, or left
+ * as is, in which case the newly created object is actiaved, but path is not
+ * altered.
+ * Default: null
+ *   - `activeStatus` - boolean or null, whether only active (true), inactive
+ * (false), or all (null) definitions should be considered when getting a
+ * definition. Default: `null`
  *   - `create` - boolean, whether the object specified by path should be created
  * if it doesn't exist yet. Default: `true`
  *   - `depthOffset` - Specify offset from the path's depth, at which the
  * definition object should be retrieved or created. Default: `0`
  */
 
-export function definitionWrapper<T>(
+export function definitionHandler<T>(
   callback: (definition: IDefinition, ...args: any[]) => T,
   path: string[],
-  definitionsObject: IDefinition = {},
+  definitionsObject: IDefinition = createDefinition(),
   options: {
     abortOnFail?: boolean;
+    action?: boolean | null;
+    activeStatus?: boolean | null;
     create?: boolean;
     depthOffset?: number;
   } = {},
   ...args: any[]
 ) {
-  const defaults = { abortOnFail: true };
-
   return new DefinitionManagerArgumentHandler({
     path,
     definitionsObject,
@@ -55,15 +59,11 @@ export function definitionWrapper<T>(
     .processOptions()
     .finally(({ path, definitionsObject, options }) => {
       const definition = getOrCreateDefinitionParent(
-        path as string[],
+        path,
         definitionsObject,
         options
       );
-      if (
-        definition === null &&
-        (options as DefinitionWrapperOptions).abortOnFail
-      )
-        return;
+      if (definition === null && options.abortOnFail) return;
 
       return callback(definition, ...args);
     }) as T;
