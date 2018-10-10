@@ -31,12 +31,12 @@ const mathDefinitions = injectDefinition.init();
 
 ```javascript
 {
-- **`definitions:`**`object`
-// To customize the formatting of inserted definitions, override these:
-- **`declarationFormatter:`**`function`
-- **`minifier:`**`function`
-- **`variableNameReplacer:`**`function`
-- **`variableNameRetriever:`**`function`
+  definitions: object,
+  // To customize the formatting of inserted definitions, override these:
+  declarationFormatter: function,
+  minifier: function,
+  variableNameReplacer: function,
+  variableNameRetriever: function
 }
 ```
 
@@ -185,6 +185,8 @@ An object of definitions stored as a tree of nested definition objects. Each def
 }
 ```
 
+---
+
 ### declarationFormatter
 
 A function that defines how definitions objects should be formatted when `inject` has option `reference: true`.
@@ -193,11 +195,15 @@ E.g. if given a definition object `'foo'`, which has structure `{'bar': 42}`, th
 
 `declarationFormatter` accepts a function of type `(definitionsObjectName: string, definitionsObject: object) => string`
 
+---
+
 ### minifier
 
 A function that minifies a string of stringified definitions values of definitions found through `generate()` or `inject()`. There is no default minification.
 
 `minifier` accepts a function of type `(stringifiedDefinitions: string) => string`
+
+---
 
 ### variableNameRetriever
 
@@ -205,13 +211,13 @@ A function that returns the name of a variable (if there is one) that is being d
 
 `variableNameRetriever` accepts a function of type `(definition: string) => string`
 
+---
+
 ### variableNameReplacer
 
 A function that replaces a variable name (same as the one found with `variableNameRetriever`) with a new name. Necessary for customizing the formatting of declared values. Default function handles simple JS declarations with `const`, `let`, `var` and `function` keywords (no unpacking).
 
 `variableNameReplacer` accepts a function of type `(definition: string, oldVariableName: string, newVariableName: string) => string`
-
----
 
 ## **Methods**
 
@@ -225,11 +231,15 @@ Creates a new definition.
 
 - **`activate:`**`boolean` - Whether the definition should be automatically activated. Inactive definitions will be ignored when scanning / generating / injecting text. Default: `true`
 
+---
+
 ### undefine(_path_)
 
 Removes a definition.
 
 **`path:`**`string | string[]` - A string or array of strings specifying the path to a definition. If as string, path components are separated by dot `'.'` .
+
+---
 
 ### undefineAll()
 
@@ -239,15 +249,21 @@ Removes all definitions of a certain type.
 
 - **`select:`**`'all'`|`'active'`|`'inactive'` - Type of definitions that should be removed. Either all definitions, only active definitions or only inactive definitions. Default: `'all'`
 
+---
+
 ### activate(_path_)
 
 Activates a definition. Active definitions are included when scanning / generating / injecting text.
 
 **`path:`**`string | string[]` - A string or array of strings specifying the path to a definition. If as string, path components are separated by dot `'.'` .
 
+---
+
 ### activateAll()
 
 Activates all definitions. Active definitions are included when scanning / generating / injecting text.
+
+---
 
 ### deactivate(_path_)
 
@@ -255,9 +271,13 @@ Deactivates a definition. Inactive definitions will be ignored when scanning / g
 
 **`path:`**`string | string[]` - A string or array of strings specifying the path to a definition. If as string, path components are separated by dot `'.'` .
 
+---
+
 ### deactivateAll()
 
 Deactivates all definitions. Inactive definitions will be ignored when scanning / generating / injecting text.
+
+---
 
 ### get(_path[, options]_)
 
@@ -269,6 +289,8 @@ Retrieves value of a definition specified by path. Returns undefined if no defin
 
 - **`select:`**`'all'`|`'active'`|`'inactive'` - Type of definitions that will be searched through. Either all, all active or all inactive definitons. Default: `'all'`
 
+---
+
 ### getAll()
 
 Retrieves the definitions tree.
@@ -278,9 +300,11 @@ Retrieves the definitions tree.
 - **`select:`**`'all'`|`'active'`|`'inactive'` - Type of definitions that populate the tree. Either all, all active or all inactive definitons. Default: `'all'`
 
 - **`type:`**`'full`|`'partial'`|`'condensed'` - Type of structure of each node in the tree. Default: `'full'`
-- - With `'full'`, each node has all properties (`value`, `keyword` , `active`, `children`).
-- - With `'partial'`, each node has only `value` and `children` properties.
-- - With `'condensed'`, each node is either an object of children nodes, or a value. (Note: Definitions that are not on terminal nodes are omitted from the condensed structure).
+  - With `'full'`, each node has all properties (`value`, `keyword` , `active`, `children`).
+  - With `'partial'`, each node has only `value` and `children` properties.
+  - With `'condensed'`, each node is either an object of children nodes, or a value. (Note: Definitions that are not on terminal nodes are omitted from the condensed structure).
+
+---
 
 ### has(_path[, options]_)
 
@@ -306,6 +330,8 @@ Returns the keywords (names) of definitions that were found in `targetText`. Onl
 
 - **`overwrite:`**`boolean` - Whether only the definitions found in `targetText` should be set as active. Deactivates all other definitions.
 
+---
+
 ### generate(_targetText[, options]_)
 
 Returns the values of definitions that were found in `targetText`. Only active definitions are included.
@@ -319,6 +345,8 @@ Returns the values of definitions that were found in `targetText`. Only active d
 - **`minify:`**`boolean` - Whether the resulting string should be minified according to the `minifier` function. Has effect only when `delimeter` is a string. Default: `false`
 
 - **`overwrite:`**`boolean` - Whether only the definitions found in `targetText` should be set as active. Deactivates all other definitions.
+
+---
 
 ### inject(_targetText[, options]_)
 
@@ -362,16 +390,16 @@ Please read [CONTRIBUTING.md](https://github.com/JuroOravec/inject-definition/bl
 ## Change-log
 
 - **2.0.0**
-- - Reworked definition tree structure and removed `activeDefinitions` object.
-- - Removed `activeDefinitions` option from `init()` options.
-- - Added `undefineAll()`
-- - Added `activateAll()`
-- - Added `deactivateAll()`
-- - Added `getAll()`
-- - Minifier affects only the string of joined definitions, not the original text
-- - Renamed options property `overwriteActiveDefinitions` to `overwrite`.
-- - Renamed options property `includeDefinitionsObjects` to `reference`.
-- - If definitions use other definitions these dependency definitions will be automatically included.
+  - Reworked definition tree structure and removed `activeDefinitions` object.
+  - Removed `activeDefinitions` option from `init()` options.
+  - Added `undefineAll()`
+  - Added `activateAll()`
+  - Added `deactivateAll()`
+  - Added `getAll()`
+  - Minifier affects only the string of joined definitions, not the original text
+  - Renamed options property `overwriteActiveDefinitions` to `overwrite`.
+  - Renamed options property `includeDefinitionsObjects` to `reference`.
+  - If definitions use other definitions these dependency definitions will be automatically included.
 
 * **1.0.0** - Initial release.
 
