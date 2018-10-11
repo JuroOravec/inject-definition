@@ -239,3 +239,6 @@ tags
 .settings/
 .vscode/
 jsconfig.json
+
+visualize.js
+visualize-module-structure.svg
