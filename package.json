@@ -1,6 +1,6 @@
 {
   "name": "inject-definition",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Inject user-defined definitions, macros, constants or other snippets to a text if corresponding keywords are present.",
   "author": "Juro Oravec",
   "license": "MIT",
