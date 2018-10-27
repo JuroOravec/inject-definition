@@ -18,3 +18,5 @@ tsconfig.json
 tslint.json
 node_modules
 src
+.visualize.js
+visualize-module-structure.svg
