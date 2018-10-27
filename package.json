@@ -33,12 +33,12 @@
     "coveralls": "^3.0.2",
     "eslint": "^5.0.1",
     "ts-node": "^6.1.1",
-    "typescript": "^2.9.2"
+    "typescript": "^2.9.2",
+    "jest": "^23.6.0"
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
     "deepcopy": "^1.0.0",
-    "jest": "^23.6.0",
     "obj-stringify": "^1.0.0",
     "toposort": "^2.0.2"
   }
