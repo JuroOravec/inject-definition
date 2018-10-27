@@ -21,7 +21,7 @@
   "scripts": {
     "tsc": "tsc",
     "build": "tsc && ./node_modules/.bin/babel temp --out-dir lib && rsync -a -m --include '*/' --include '*.d.ts' --exclude '*' temp/ lib/ && rm -r temp ",
-    "start": "yarn run build && node lib",
+    "start": "npm run build && node lib",
     "test": "jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "devDependencies": {
