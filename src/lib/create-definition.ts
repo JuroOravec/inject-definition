@@ -1,6 +1,4 @@
-/// <reference path="../interface/definition-manager.ts" />
-
-import IDefinition = DefinitionInjector.IDefinition;
+import { IDefinition } from "src/interface/definition";
 
 export function createDefinition(options: Partial<IDefinition> = {}) {
   const activeStatus = options.active !== undefined ? options.active : true;

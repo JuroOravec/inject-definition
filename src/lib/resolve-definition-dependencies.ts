@@ -1,7 +1,6 @@
-/// <reference path="../interface/definition-injector.ts" />
+import { IDefinitionInjector } from "src/interface/definition-injector";
+import { IDefinitionEntry } from "src/interface/definition-entry";
 
-import IDefinitionEntry = DefinitionInjector.IDefinitionEntry;
-import IDefinitionInjector = DefinitionInjector.IDefinitionInjector;
 import { resolveDependency } from "./resolve-dependency";
 import { stringify } from "./stringify";
 

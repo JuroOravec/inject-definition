@@ -1,8 +1,10 @@
-import IDefinitionInjector = DefinitionInjector.IDefinitionInjector;
-import IDeclarationFormatter = DefinitionInjector.IDeclarationFormatter;
-import IMinifier = DefinitionInjector.IMinifier;
-import IVariableNameReplacer = DefinitionInjector.IVariableNameReplacer;
-import IVariableNameRetriever = DefinitionInjector.IVariableNameRetriever;
+import { IDefinitionInjector } from "src/interface/definition-injector";
+import {
+  IDeclarationFormatter,
+  IMinifier,
+  IVariableNameReplacer,
+  IVariableNameRetriever
+} from "src/interface/definition-injector-custom-methods";
 
 /**
  * Defines a method as a non-enumerable symbol property on an object

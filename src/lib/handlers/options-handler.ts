@@ -1,5 +1,3 @@
-/// <reference path="../../interface/definition-manager.ts" />
-
 /**
  * Assigns user-defined options to the default values. Calls passed callback,
  * and prepends the options object as the first argument. First 3 arguments

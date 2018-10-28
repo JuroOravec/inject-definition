@@ -1,7 +1,5 @@
-/// <reference path="../../interface/definition-manager.ts" />
-
-import IDefinition = DefinitionInjector.IDefinition;
-import IDefinitionManager = DefinitionInjector.IDefinitionManager;
+import { IDefinitionManager } from "src/interface/definition-manager";
+import { IDefinition } from "src/interface/definition";
 
 import { diveDownBranch } from "./dive-down-branch";
 import { defaults } from "../defaults/branch/export-branch";

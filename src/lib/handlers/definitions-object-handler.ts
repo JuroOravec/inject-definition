@@ -1,7 +1,5 @@
-/// <reference path="../../interface/definition-manager.ts" />
-
-import IDefinition = DefinitionInjector.IDefinition;
-import IDefinitionManager = DefinitionInjector.IDefinitionManager;
+import { IDefinition } from "src/interface/definition";
+import { IDefinitionManager } from "src/interface/definition-manager";
 
 /**
  * Processes and validates definitions object. Calls passed callback if and

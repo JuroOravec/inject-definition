@@ -1,6 +1,4 @@
-/// <reference path="../../interface/definition-manager.ts" />
-
-import IDefinition = DefinitionInjector.IDefinition;
+import { IDefinition } from "src/interface/definition";
 
 import { bubbleUpBranch } from "./bubble-up-branch";
 import { isBranchActive } from "./is-branch-active";

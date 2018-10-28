@@ -1,4 +1,12 @@
-/// <reference path="./interface/definition-injector.ts" />
+import { IDefinitionInjector } from "./interface/definition-injector";
+import {
+  IDeclarationFormatter,
+  IMinifier,
+  IVariableNameReplacer,
+  IVariableNameRetriever
+} from "./interface/definition-injector-custom-methods";
+import { IDefinition } from "./interface/definition";
+import { IDefinitionEntry } from "./interface/definition-entry";
 
 import { DefinitionManager } from "./definition-manager";
 
@@ -6,21 +14,14 @@ import { preventVariableClashes } from "./lib/prevent-variable-clashes";
 import { mapDefinitionBranchesToObject } from "./lib/map-definition-branches-to-object";
 import { setMethod } from "./lib/set-method";
 import { stringify } from "./lib/stringify";
+import { resolveDefinitionDependencies } from "./lib/resolve-definition-dependencies";
 
-import IDefinition = DefinitionInjector.IDefinition;
-import IDefinitionEntry = DefinitionInjector.IDefinitionEntry;
-import IDefinitionInjector = DefinitionInjector.IDefinitionInjector;
-import IVariableNameRetriever = DefinitionInjector.IVariableNameRetriever;
-import IVariableNameReplacer = DefinitionInjector.IVariableNameReplacer;
-import IDeclarationFormatter = DefinitionInjector.IDeclarationFormatter;
-import IMinifier = DefinitionInjector.IMinifier;
 import {
   constructorDefaults,
   injectDefaults,
   generateDefaults,
   scanDefaults
 } from "./lib/defaults/definition-injector";
-import { resolveDefinitionDependencies } from "./lib/resolve-definition-dependencies";
 
 type ScanOptions = {
   overwrite?: boolean;

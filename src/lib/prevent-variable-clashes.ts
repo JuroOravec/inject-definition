@@ -1,4 +1,8 @@
-/// <reference path="../interface/definition-injector.ts" />
+import { IDefinitionEntry } from "src/interface/definition-entry";
+import {
+  IVariableNameRetriever,
+  IVariableNameReplacer
+} from "src/interface/definition-injector-custom-methods";
 
 import { stringify } from "./stringify";
 
@@ -18,9 +22,9 @@ import { stringify } from "./stringify";
  * variable from a definition with a new value.
  */
 export function preventVariableClashes(
-  definitionEntries: DefinitionInjector.IDefinitionEntry[],
-  variableNameRetriever: DefinitionInjector.IVariableNameRetriever,
-  variableNameReplacer: DefinitionInjector.IVariableNameReplacer
+  definitionEntries: IDefinitionEntry[],
+  variableNameRetriever: IVariableNameRetriever,
+  variableNameReplacer: IVariableNameReplacer
 ) {
   /**
    * For clash avoidance, counter object is used that adds 1 to each time

@@ -1,6 +1,4 @@
-/// <reference path="../interface/definition-injector.ts" />
-
-import IDefinitionCondensed = DefinitionInjector.IDefinition;
+import { IDefinitionCondensed } from "src/interface/definition";
 
 import { DefinitionManager } from "../definition-manager";
 import { stringify } from "./stringify";

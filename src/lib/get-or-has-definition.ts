@@ -1,7 +1,5 @@
-/// <reference path="../interface/definition-manager.ts" />
-
-import IDefinitionManager = DefinitionInjector.IDefinitionManager;
-import IDefinition = DefinitionInjector.IDefinition;
+import { IDefinitionManager } from "src/interface/definition-manager";
+import { IDefinition } from "src/interface/definition";
 
 import { DefinitionManagerArgumentHandler } from "../argument-handler";
 import { search } from "./search";

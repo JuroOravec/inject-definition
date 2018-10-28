@@ -1,8 +1,6 @@
-/// <reference path="./interface/definition-manager.ts" />
-
-import IArgumentHandler = DefinitionInjector.IArgumentHandler;
-import IArgumentHandlerOptions = DefinitionInjector.IArgumentHandlerOptions;
-import IDefinition = DefinitionInjector.IDefinition;
+import { IArgumentHandler } from "./interface/argument-handler";
+import { IArgumentHandlerOptions } from "./interface/argument-handler-options";
+import { IDefinition } from "./interface/definition";
 
 import { pathHandler } from "./lib/handlers/path-handler";
 import { optionsHandler } from "./lib/handlers/options-handler";

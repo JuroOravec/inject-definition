@@ -1,5 +1,3 @@
-/// <reference path="../../interface/definition-manager.ts" />
-
 /**
  * Processes and validates path. Calls passed callback if and only if the path
  * is valid, and prepends the path as the first argument. First 2 arguments

@@ -1,8 +1,5 @@
-/// <reference path="./interface/definition-manager.ts" />
-
-import IDefinition = DefinitionInjector.IDefinition;
-import IDefinitionCondensed = DefinitionInjector.IDefinitionCondensed;
-import IDefinitionManager = DefinitionInjector.IDefinitionManager;
+import { IDefinitionManager } from "./interface/definition-manager";
+import { IDefinition, IDefinitionCondensed } from "./interface/definition";
 
 import { DefinitionManagerArgumentHandler } from "./argument-handler";
 import { getOrCreateDefinitionParent } from "./lib/get-or-create-definition-parent";

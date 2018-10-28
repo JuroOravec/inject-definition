@@ -1,10 +1,10 @@
-/// <reference path="./../../interface/definition-injector.ts" />
-
-import IDefinition = DefinitionInjector.IDefinition;
-import IDeclarationFormatter = DefinitionInjector.IDeclarationFormatter;
-import IMinifier = DefinitionInjector.IMinifier;
-import IVariableNameReplacer = DefinitionInjector.IVariableNameReplacer;
-import IVariableNameRetriever = DefinitionInjector.IVariableNameRetriever;
+import { IDefinition } from "src/interface/definition";
+import {
+  IDeclarationFormatter,
+  IMinifier,
+  IVariableNameReplacer,
+  IVariableNameRetriever
+} from "src/interface/definition-injector-custom-methods";
 
 export const constructorDefaults: {
   definitions?: IDefinition;
