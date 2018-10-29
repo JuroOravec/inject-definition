@@ -51,7 +51,7 @@ export function mapDefinitionBranchesToObject(
     quoteMark + "?" + openingTag + "|" + closingTag + quoteMark + "?",
     "g"
   );
-  const branches = definitionManager.getAll({ type: "condensed" });
+  const branches = definitionManager.getAll({ type: "condensed" }) || {};
   Object.keys(branches).forEach(branchKey => {
     const branch = branches[branchKey];
     const branchAsString = stringify(branch);
