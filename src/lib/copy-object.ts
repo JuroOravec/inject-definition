@@ -1,5 +1,5 @@
-import * as deepcopy from "deepcopy";
+import * as clone from "clone";
 
 export function copyObject<T>(obj: T) {
-  return deepcopy(obj) as T;
+  return clone(obj) as T;
 }
