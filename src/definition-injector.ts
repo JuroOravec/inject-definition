@@ -467,9 +467,11 @@ export class DefinitionInjector extends DefinitionManager
       const definitionKeyRegExp = new RegExp(definitionKey + "(\\.\\w+)*", "g");
       const matchedDefinitions = target.match(definitionKeyRegExp) || [];
 
-      // Filter out invalid/unknown definitions
-      const ownMatchedDefinitions = matchedDefinitions.filter(definitionKey =>
-        this.has(definitionKey)
+      // Filter out invalid/unknown definitions and take only unique values
+      const ownMatchedDefinitions = Array.from(
+        new Set(
+          matchedDefinitions.filter(definitionKey => this.has(definitionKey))
+        )
       );
 
       // Activate the valid definitions
