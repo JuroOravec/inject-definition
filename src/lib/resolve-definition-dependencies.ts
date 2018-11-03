@@ -73,6 +73,8 @@ export function resolveDefinitionDependencies(
 
     if (!dependencyNodesCopy.includes(keyword)) {
       dependencyNodesCopy.push(keyword);
+    }
+    if (!definitionEntriesCopy.find(defEntry => defEntry.keyword === keyword)) {
       definitionEntriesCopy.push({
         keyword,
         value: definitionInjector.get(keyword),
@@ -82,20 +84,24 @@ export function resolveDefinitionDependencies(
 
     return dependencies.reduce(
       ({ defEntries, depNodes, depRelationships }, dependency) => {
-        depRelationships.push([keyword, dependency]);
+        const subdependencies = [];
 
-        const dependencyValue = definitionInjector.get(dependency);
-        const dependencyDependencies = definitionInjector.scan(
-          stringify(dependencyValue),
-          { delimiter: false }
-        ) as string[];
+        if (keyword !== dependency) {
+          depRelationships.push([keyword, dependency]);
+          const dependencyValue = definitionInjector.get(dependency);
+          subdependencies.push(
+            ...(definitionInjector.scan(stringify(dependencyValue), {
+              delimiter: false
+            }) as string[])
+          );
+        }
 
         return recursiveDependencySearch(
           defEntries,
           depNodes,
           depRelationships,
           dependency,
-          dependencyDependencies
+          subdependencies
         );
       },
       {
